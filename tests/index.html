@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>stash tests</title></head>
+<body><div id="out"></div>
+<script type="module">
+  if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    document.getElementById("out").textContent = "Tests run only on localhost.";
+  } else {
+    await import("./calc.test.js");
+    await import("./targets.test.js");
+    await import("./view-model.test.js");
+    await import("./data.test.js");
+    await import("./render.test.js");
+    const { runAll } = await import("./run.js");
+    runAll();
+  }
+</script></body></html>
