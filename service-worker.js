@@ -12,7 +12,7 @@
    so the teardown has to live here to be able to break out of a stale shell.
 */
 
-const VERSION = "v0.1";
+const VERSION = "v0.2";
 const CACHE = `kave-stash-${VERSION}`;
 
 const IS_LOCAL_DEV = ["localhost", "127.0.0.1"].includes(self.location.hostname);
@@ -90,12 +90,14 @@ self.addEventListener("install", (e) => {
    handling fetches until this one claims its clients, and its
    stale-while-revalidate does caches.open(<its own CACHE>), which recreates
    the cache just deleted. Spoon watched kave-food-v7 come back from the dead
-   moments after activate cleaned it up. */
+   moments after activate cleaned it up.
+   Only Stash's own old shells go: Cache Storage is shared with Ladle, Compass
+   and the hub on this origin, and Compass keeps its stored tickets there. */
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     self.clients.claim()
       .then(() => caches.keys())
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("kave-stash-") && k !== CACHE).map((k) => caches.delete(k))))
   );
 });
 
