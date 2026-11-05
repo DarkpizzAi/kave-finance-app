@@ -12,7 +12,7 @@
    so the teardown has to live here to be able to break out of a stale shell.
 */
 
-const VERSION = "v0.2";
+const VERSION = "v0.3";
 const CACHE = `kave-stash-${VERSION}`;
 
 const IS_LOCAL_DEV = ["localhost", "127.0.0.1"].includes(self.location.hostname);
@@ -54,7 +54,10 @@ const SHELL = [
   "icon-192.png",
   "icon-512.png",
   "icon-512-maskable.png",
+  "icon-512-monochrome.png",
   "apple-touch-icon.png",
+  "favicon.svg",
+  "favicon-32.png",
 ];
 
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
