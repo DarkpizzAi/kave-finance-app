@@ -1,5 +1,14 @@
 # Stash - non-negotiables
 
+## The household look is enforced
+
+Before any interface change, load `brand:apply-household-look` (or read
+`kave-hub/brand/skills/apply-household-look/SKILL.md` if the loaded copy is
+out of date). Every commit runs `kave-hub/brand/tools/brand_check.py --strict`
+(git hook and Claude hook), and pushing `main` needs a passed brand review in
+`kave-hub/brand/reviews/<this repo>-<VERSION>.md`. A deviation from Material 3
+needs Isa's dated decision in `kave-hub/brand/data/look-recap.md`.
+
 Everything else, including the whole design system, lives in the `brand`
 plugin of the private `kave-hub` repo. This repo is public: no household data,
 names, figures or tokens, ever.
