@@ -39,8 +39,17 @@ async function load() {
   paintBackground();
 }
 
-function closeMenu() { document.getElementById("drawer").hidden = true; document.getElementById("drawerScrim").hidden = true; }
-function closeSearch() { document.getElementById("searchPage").hidden = true; }
+/* The drawer and the search view are layers: each opens with a history entry,
+   so the phone's back gesture closes it (Material, and as Ladle), and closing
+   it by hand walks that entry back. */
+let layer = null; // "menu" | "search" | null, the one with a history entry
+function pushLayer(name) { if (layer) return; layer = name; try { history.pushState({ stash: name }, ""); } catch { layer = null; } }
+function popLayer(name) { if (layer === name) { layer = null; history.back(); } }
+function hideMenu() { document.getElementById("drawer").hidden = true; document.getElementById("drawerScrim").hidden = true; }
+function hideSearch() { document.getElementById("searchPage").hidden = true; }
+function closeMenu() { hideMenu(); popLayer("menu"); }
+window.addEventListener("popstate", () => { const was = layer; layer = null; if (was === "menu") hideMenu(); if (was === "search") hideSearch(); });
+function closeSearch() { hideSearch(); popLayer("search"); }
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeMenu(); closeSearch(); } });
 /* search filters as you type: only the results redraw, so the field (and the
    phone's keyboard) stay as they are */
@@ -53,12 +62,13 @@ document.addEventListener("input", (e) => {
 
 wire({
   tab: (el) => { env.tab = el.dataset.tab; closeMenu(); paint(); window.scrollTo(0, 0); showTopBar(true); },
-  menu: () => { const d = document.getElementById("drawer"); document.getElementById("drawerScrim").hidden = false; d.hidden = false; (d.querySelector(".m3-drawer__item") || d).focus(); },
+  menu: () => { const d = document.getElementById("drawer"); document.getElementById("drawerScrim").hidden = false; d.hidden = false; pushLayer("menu"); (d.querySelector(".m3-drawer__item") || d).focus(); },
   "close-menu": () => closeMenu(),
   search: () => {
     closeMenu();
     const page = document.getElementById("searchPage"), i = document.getElementById("searchInput");
     page.hidden = false;
+    pushLayer("search");
     document.getElementById("searchResults").innerHTML = searchResultsHtml(searchVm(env), i.value);
     i.focus();
   },
