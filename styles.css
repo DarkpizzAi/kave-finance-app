@@ -96,3 +96,13 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
 .roadmap-soon { pointer-events: none; }
 .m3-drawer { padding-top: calc(var(--md-sys-measurement-space150) + env(safe-area-inset-top, 0px)); }
 .m3-search-view { padding-top: env(safe-area-inset-top, 0px); }
+
+/* the gate, as Ladle's: alone on the page until a token unlocks the app */
+body.gated > :not(#gate) { display: none !important; }
+.gate { position: fixed; inset: 0; z-index: 100; background: var(--md-sys-color-surface); }
+.gate-box { align-items: stretch; }
+.gate-mark { margin: 0; font-weight: 400; }
+.gate-field { margin-top: var(--md-sys-measurement-space100); }
+.setup-row { display: flex; flex-wrap: wrap; gap: var(--md-sys-measurement-space150); align-items: center; justify-content: center; }
+.gate .m3-dialog__actions { margin-top: 0; }
+.setup-swatch { width: 48px; height: 48px; }

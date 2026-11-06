@@ -4,6 +4,7 @@
 
 import { initTheme, applyPalette } from "./theme.js";
 import { initTopBar, showTopBar } from "./top-bar.js";
+import { renderGate } from "./gate.js";
 import { store } from "./store.js";
 import { github } from "../github.js";
 import { loadScope, targetsPath } from "./data.js";
@@ -20,7 +21,23 @@ github.setToken(store.state.settings.token);
 const env = { tab: "overview", scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
               good: null, settings: store.state.settings, buildView, targetsPath };
 
-function paint(opts) { env.settings = store.state.settings; render(env, opts); }
+/* Until a token unlocks it, only the gate shows (gate.js), as Ladle and Compass. */
+const GATE = {
+  check: async (t) => {
+    const was = store.state.settings.token;
+    github.setToken(t);
+    try { await github.getFile(".claude-plugin/marketplace.json"); return true; }
+    catch { github.setToken(was); return false; }
+  },
+  save: (t) => { store.setSetting("token", t); github.setToken(t); env.loaded = null; env.loadedScope = null; env.good = null; paint(); load(); },
+  who: (w) => { store.setSetting("me", w); env.scope = w; env.loaded = null; env.loadedScope = null; paint(); load(); },
+  palette: (p) => { store.setSetting("palette", p); applyPalette(p); paint(); },
+};
+function paint(opts) {
+  env.settings = store.state.settings;
+  if (renderGate(env.settings, GATE)) return;
+  render(env, opts);
+}
 /* A background load must not rebuild Settings: the token field may hold
    something typed and not yet saved. */
 function paintBackground() { paint({ keepView: env.tab === "settings" }); }
@@ -34,6 +51,8 @@ async function load() {
   if (!store.hasToken() || !store.state.settings.me) return;
   const loaded = await loadScope(github, scope);
   if (scope !== env.scope || token !== store.state.settings.token) return;
+  /* a token GitHub rejects locks the app again: back to the gate, as Ladle */
+  if (loaded.status === "unauthorized") { store.setSetting("token", ""); github.setToken(""); env.good = null; env.loaded = null; paint(); return; }
   env.loaded = loaded;
   if (loaded.status === "ok") env.good = { scope, loaded };
   paintBackground();
