@@ -11,13 +11,13 @@
 
 import { store } from "./store.js";
 
-/* palette id -> display name. Must stay in step with the [data-palette]
-   blocks in tokens.css; adding one here without adding it there silently
-   falls back to Cobalt. #theme-preload in index.html repeats the non-Cobalt
-   ids (it runs before modules load); change both, then recompute its hash. */
+/* The two household themes (Isa, 05/11/2026), on Material 3 since 06/11/2026.
+   data-seed drives the kit's tokens (m3/kave-m3-tokens.css); data-palette is
+   kept for older readers. #theme-preload in index.html repeats this (it runs
+   before modules load); change both, then recompute its hash. A retired
+   palette (amber, lime, tangerine, volt) reads as Cobalt. */
 export const PALETTES = {
   cobalt: "Cobalt",
-  amber: "Amber",
   chartreuse: "Chartreuse",
 };
 
@@ -35,9 +35,8 @@ export function syncColorScheme() {
 
 export function applyPalette(palette) {
   const root = document.documentElement;
-  /* a palette retired from the hub (lime, tangerine, volt) reads as Cobalt */
-  if (PALETTES[palette] && palette !== "cobalt") root.setAttribute("data-palette", palette);
-  else root.removeAttribute("data-palette");
+  if (PALETTES[palette] && palette !== "cobalt") { root.setAttribute("data-palette", palette); root.setAttribute("data-seed", palette); }
+  else { root.removeAttribute("data-palette"); root.removeAttribute("data-seed"); }
   syncColorScheme();
 }
 
@@ -46,37 +45,6 @@ export function initTheme() {
   /* The OS can flip while the app is open, and an installed PWA is often
      open for days. Without this the app keeps the scheme it booted with. */
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncColorScheme);
-}
-
-/* Each palette's accent, for the swatches in Settings.
-
-   Read from tokens.css rather than hardcoded here: a second copy of the hex
-   values is a second thing to keep in step, and it would drift the first time
-   a palette is retuned in the hub. Same trick Spoon uses - set the attribute,
-   read the resolved value, put it back - and it has to restore exactly what
-   was there, including "nothing". Cached because it forces a style
-   recalculation per palette and the answer cannot change at runtime. */
-let accentCache = null;
-let softs = {};
-/* Each palette's --accent-soft, read in the same pass as its accent. */
-export function paletteSofts() { paletteAccents(); return softs; }
-
-export function paletteAccents() {
-  if (accentCache) return accentCache;
-  const root = document.documentElement;
-  const prev = root.getAttribute("data-palette");
-  const out = {};
-  softs = {};
-  for (const id of Object.keys(PALETTES)) {
-    if (id === "cobalt") root.removeAttribute("data-palette");
-    else root.setAttribute("data-palette", id);
-    out[id] = getComputedStyle(root).getPropertyValue("--accent").trim();
-    softs[id] = getComputedStyle(root).getPropertyValue("--accent-soft").trim();
-  }
-  if (prev === null) root.removeAttribute("data-palette");
-  else root.setAttribute("data-palette", prev);
-  accentCache = out;
-  return out;
 }
 
 /* Did the inline #theme-preload script in index.html actually run? If the CSP

@@ -1,5 +1,9 @@
 # Stash - non-negotiables
 
+> **Hugo, read this first:** on 06/11/2026 Isa updated the branding skill and
+> consequently Stash (now on Material 3, v0.4). What changed and what is left:
+> `kave-hub/finance/data/stash-handoff-2026-11-06.md`.
+
 ## The household look is enforced
 
 Before any interface change, load `brand:apply-household-look` (or read
@@ -21,9 +25,10 @@ in `service-worker.js` are the deployment's identity.
 In `service-worker.js`. A token change counts. Verify by reading a value only
 the new code can produce, not by checking that it deployed.
 
-## `tokens.css` is generated
-By `brand/tools/sync-household-tokens.py` in kave-hub. Never hand-edit.
-`styles.css` uses tokens and defines none.
+## `m3/` is generated
+The Material 3 kit and tokens, by `brand/tools/sync-household-tokens.py` in
+kave-hub (with the icons). Never hand-edit. `styles.css` is layout only and
+defines no tokens. `tokens.css` (pre-Material) is still synced, not linked.
 
 ## Security
 XSS is the threat model: the GitHub token sits in localStorage. Every synced

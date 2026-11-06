@@ -2,7 +2,7 @@
    script is the inline #theme-preload in index.html. */
 "use strict";
 
-import { initTheme } from "./theme.js";
+import { initTheme, applyPalette } from "./theme.js";
 import { store } from "./store.js";
 import { github } from "../github.js";
 import { loadScope, targetsPath } from "./data.js";
@@ -45,6 +45,7 @@ wire({
     store.setSetting("me", el.dataset.who); env.scope = el.dataset.who;
     env.loaded = null; env.loadedScope = null; paint(); load();
   },
+  palette: (el) => { store.setSetting("palette", el.dataset.palette); applyPalette(el.dataset.palette); paint(); },
   "save-token": () => {
     const v = document.getElementById("tokenInput").value.trim();
     store.setSetting("token", v); github.setToken(v); env.tab = "overview";

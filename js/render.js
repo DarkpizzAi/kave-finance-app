@@ -28,23 +28,23 @@ export function statusHtml(status, ctx) {
 export function whoHtml() {
   return `<div class="card who"><h2>Who is looking?</h2>
     <p class="sub">Stash opens on your own view. You can change this in Settings.</p>
-    <div class="row"><button class="btn" data-action="who" data-who="hugo">Hugo</button>
-    <button class="btn" data-action="who" data-who="isa">Isa</button></div></div>`;
+    <div class="row"><button class="m3-chip" data-action="who" data-who="hugo">Hugo</button>
+    <button class="m3-chip" data-action="who" data-who="isa">Isa</button></div></div>`;
 }
 
 export function scopesHtml(current, me) {
   return ["hugo", "isa", "household"].map((s) => {
     const label = NAMES[s] + (s === me ? " (you)" : "");
-    return `<button role="tab" class="scope" data-action="scope" data-scope="${s}" aria-selected="${s === current}">${esc(label)}</button>`;
+    return `<button role="tab" class="scope m3-chip${s === current ? " is-selected" : ""}" data-action="scope" data-scope="${s}" aria-selected="${s === current}">${esc(label)}</button>`;
   }).join("");
 }
 
 function chips(vm, ctx, me) {
   const out = [];
-  if (vm.kind) out.push(`<span class="chip">${vm.kind === "salary-cycle" ? "salary cycles" : "calendar months"}</span>`);
-  if (vm.stale) out.push(`<span class="chip warn">${esc(String(vm.stale.days))} days old</span>`);
-  else if (vm.generated) out.push(`<span class="chip">updated ${esc(vm.generated.slice(0, 10))}</span>`);
-  if (me && ctx.scope !== me && ctx.scope !== "household") out.push(`<span class="chip">viewing another person, read only</span>`);
+  if (vm.kind) out.push(`<span class="chip m3-chip">${vm.kind === "salary-cycle" ? "salary cycles" : "calendar months"}</span>`);
+  if (vm.stale) out.push(`<span class="chip warn m3-chip">${esc(String(vm.stale.days))} days old</span>`);
+  else if (vm.generated) out.push(`<span class="chip m3-chip">updated ${esc(vm.generated.slice(0, 10))}</span>`);
+  if (me && ctx.scope !== me && ctx.scope !== "household") out.push(`<span class="chip m3-chip">viewing another person, read only</span>`);
   return out.length ? `<div class="meta">${out.join("")}</div>` : "";
 }
 
@@ -73,7 +73,7 @@ function chartHtml(vm) {
   const bars = vm.months.map((m, i) => {
     /* a refund-heavy month can total below zero: draw no bar, keep its label */
     const h = Math.max(0, m.spend / mx * 110), x = 20 + i * 66;
-    return `<rect x="${x}" y="${125 - h}" width="40" height="${h}" fill="var(--accent)"/>` +
+    return `<rect class="bar" x="${x}" y="${125 - h}" width="40" height="${h}" rx="4"/>` +
       `<text x="${x + 20}" y="140" text-anchor="middle">${esc(m.label.slice(2))}</text>` +
       `<text x="${x + 20}" y="${120 - h}" text-anchor="middle">${formatEur(m.spend)}</text>`;
   }).join("");
@@ -96,7 +96,7 @@ function oneOffsHtml(list) {
 export function overviewHtml(vm, ctx, me = "") {
   return `${chips(vm, ctx, me)}${kpisHtml(vm.kpis, ctx)}${goalHtml(vm.goal)}
     <div class="two"><div class="card"><h2>Where it went</h2>${chartHtml(vm)}${oneOffsHtml(vm.oneOffs)}</div>
-    <div class="card">${catsHtml(vm)}</div></div>`;
+    <div class="card pane">${catsHtml(vm)}</div></div>`;
 }
 
 /* Pure overview, with the status of a failed refresh on top. Used when the
@@ -110,18 +110,29 @@ export function staleOverviewHtml(status, ctx, vm, me = "") {
 export function settingsHtml(settings, themeOk = true, tokenDraft = null) {
   const warn = themeOk ? "" :
     `<div class="note alert" role="alert">Theme preload BLOCKED: recompute the CSP hash (see README).</div>`;
-  return `${warn}<div class="card"><h2>GitHub token</h2>
+  const pal = settings.palette === "chartreuse" ? "chartreuse" : "cobalt";
+  const sw = (id, name) => `<button class="swatch swatch-${id}${pal === id ? " is-on" : ""}" data-action="palette" data-palette="${id}" aria-pressed="${pal === id}">` +
+    `<i>${pal === id ? '<span class="m3-icon">check</span>' : ""}</i><span class="m3-label-m">${name}</span></button>`;
+  return `${warn}<div class="m3-list-header m3-title-s">Theme</div>
+    <div class="card"><div class="swatches">${sw("cobalt", "Cobalt")}${sw("chartreuse", "Chartreuse")}</div>
+    <p class="sub">Light or dark follows the phone.</p></div>
+    <div class="m3-list-header m3-title-s">Who are you?</div>
+    <div class="card"><div class="row"><button class="m3-chip${settings.me === "hugo" ? " is-selected" : ""}" data-action="who" data-who="hugo" aria-pressed="${settings.me === "hugo"}">Hugo</button>
+    <button class="m3-chip${settings.me === "isa" ? " is-selected" : ""}" data-action="who" data-who="isa" aria-pressed="${settings.me === "isa"}">Isa</button></div></div>
+    <div class="m3-list-header m3-title-s">Advanced</div>
+    <div class="card"><h2>GitHub token</h2>
     <p class="sub">Read access to the private hub repo. It stays on this device.</p>
     <div class="row"><input id="tokenInput" type="password" autocomplete="off" value="${esc(tokenDraft == null ? settings.token : tokenDraft)}" aria-label="GitHub token">
-    <button class="btn" data-action="save-token">Save</button></div></div>
-    <div class="card"><h2>Who are you?</h2>
-    <div class="row"><button class="btn" data-action="who" data-who="hugo" aria-pressed="${settings.me === "hugo"}">Hugo</button>
-    <button class="btn" data-action="who" data-who="isa" aria-pressed="${settings.me === "isa"}">Isa</button></div></div>`;
+    <button class="m3-btn m3-btn--filled" data-action="save-token">Save</button></div></div>`;
 }
 
+/* Material 3 navigation: a bar on the phone, a rail on wide screens (the same
+   markup, laid out by styles.css). */
+const TABS = { overview: ["Overview", "savings"], settings: ["Settings", "settings"] };
 export function navHtml(tab) {
-  return ["overview", "settings"].map((t) =>
-    `<button class="navbtn" data-action="tab" data-tab="${t}" aria-current="${t === tab}">${t === "overview" ? "Overview" : "Settings"}</button>`).join("");
+  return Object.entries(TABS).map(([t, [label, icon]]) =>
+    `<button class="navbtn m3-nav-item${t === tab ? " is-active" : ""}" data-action="tab" data-tab="${t}" aria-current="${t === tab}">` +
+    `<span class="m3-nav-item__pill"><span class="m3-icon${t === tab ? " m3-icon--fill" : ""}">${icon}</span></span><span class="m3-label-m">${label}</span></button>`).join("");
 }
 
 /* States the last good data survives. Anything else (rejected token, no
@@ -141,6 +152,7 @@ export function render(env, opts = {}) {
   document.getElementById("scopes").innerHTML = me ? scopesHtml(scope, me) : "";
   document.getElementById("nav").innerHTML = navHtml(tab);
   const view = document.getElementById("view");
+  view.dataset.tab = tab; /* overview: wide + skinny (1120); settings: one column (720) */
   if (tab === "settings") {
     if (opts.keepView) return;
     const field = document.getElementById("tokenInput");
