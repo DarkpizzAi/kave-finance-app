@@ -11,6 +11,7 @@
 "use strict";
 
 import { PALETTES } from "./theme.js";
+import { enterLayer } from "../m3/kave-m3.js";
 
 /* true between a fresh token and the theme pick, this session only */
 let fresh = false;
@@ -24,7 +25,16 @@ export function gateStep(settings) {
 
 const ARROW = '<span class="m3-icon" aria-hidden="true">arrow_forward</span>';
 const MARK = '<h2 class="gate-mark m3-headline-s">Stash</h2>';
-const HEX = { cobalt: "#1a73e8", chartreuse: "#d7d63a" };
+/* Each theme's primary, read from the kit tokens, as Ladle's gate. */
+function accents() {
+  const root = document.documentElement, prev = root.getAttribute("data-seed"), out = {};
+  for (const id of Object.keys(PALETTES)) {
+    if (id === "cobalt") root.removeAttribute("data-seed"); else root.setAttribute("data-seed", id);
+    out[id] = getComputedStyle(root).getPropertyValue("--md-sys-color-primary").trim();
+  }
+  if (prev === null) root.removeAttribute("data-seed"); else root.setAttribute("data-seed", prev);
+  return out;
+}
 
 export function gateHtml(step) {
   const open = '<div class="gate-box m3-dialog m3-dialog--basic" role="dialog" aria-modal="true" aria-label="Stash">';
@@ -39,8 +49,9 @@ export function gateHtml(step) {
       + '<button type="button" class="setup-choice m3-btn m3-btn--tonal" data-gate-who="isa">Isa</button>'
       + '<button type="button" class="setup-choice m3-btn m3-btn--tonal" data-gate-who="hugo">Hugo</button></div></div>';
   }
+  const acc = typeof document === "undefined" ? {} : accents();
   return `${open}${MARK}<div class="setup-row">${Object.keys(PALETTES).map((id) =>
-    `<button type="button" class="setup-swatch m3-swatch" data-gate-palette="${id}" aria-label="${PALETTES[id]}" style="--kave-k:${HEX[id]}"></button>`).join("")}</div></div>`;
+    `<button type="button" class="setup-swatch m3-swatch" data-gate-palette="${id}" aria-label="${PALETTES[id]}" style="--kave-k:${acc[id] || ""}"></button>`).join("")}</div></div>`;
 }
 
 /* Draws the gate, or hides it. Returns true while the app is gated.
@@ -55,6 +66,7 @@ export function renderGate(settings, { check, save, who, palette }) {
   if (root.dataset.step === step) return true; // already drawn: keep what is typed
   root.dataset.step = step;
   root.innerHTML = gateHtml(step);
+  enterLayer(root.querySelector(".gate-box"), "dialog"); // a dialog scales in from 85%, as Ladle's
   const input = document.getElementById("gateToken");
   if (input) {
     let busy = false;
