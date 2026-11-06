@@ -5,6 +5,9 @@
    the menu at its top, Overview wide + skinny 1120 (696 + 24 + 400), Settings
    one column 720. Settings lives in the menu drawer. */
 * { box-sizing: border-box; }
+/* hidden means hidden, whatever display a kit class sets (the search view and the
+   drawer are display: flex), as Ladle and Compass */
+[hidden] { display: none !important; }
 body { margin: 0; }
 .shell { min-height: 100vh; }
 
