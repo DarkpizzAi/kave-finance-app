@@ -26,7 +26,7 @@ export function statusHtml(status, ctx) {
 }
 
 export function whoHtml() {
-  return `<div class="card who"><h2>Who is looking?</h2>
+  return `<div class="m3-card m3-card--elevated card who"><h2>Who is looking?</h2>
     <p class="sub">Stash opens on your own view. You can change this in Settings.</p>
     <div class="row"><button class="m3-chip" data-action="who" data-who="hugo">Hugo</button>
     <button class="m3-chip" data-action="who" data-who="isa">Isa</button></div></div>`;
@@ -51,18 +51,18 @@ function chips(vm, ctx, me) {
 function kpisHtml(k, ctx) {
   if (!k) {
     return `<div class="kpis">${["Safe to spend / month", "Typical income", "Savings target", "Recurring targets"]
-      .map((l) => `<div class="kpi none"><small>${l}</small><b>No target set</b><em>add it in ${esc(ctx.targetsFile)}</em></div>`).join("")}</div>`;
+      .map((l) => `<div class="m3-card m3-card--elevated kpi none"><small>${l}</small><b>No target set</b><em>add it in ${esc(ctx.targetsFile)}</em></div>`).join("")}</div>`;
   }
   return `<div class="kpis">
     <div class="kpi hero"><small>Safe to spend / month</small><b>${formatEur(k.safe)}</b><em>after savings and recurring targets</em></div>
-    <div class="kpi"><small>Typical income</small><b>${formatEur(k.income)}</b><em>committed typical figure</em></div>
-    <div class="kpi"><small>Savings target</small><b>${formatEur(k.savings)}</b><em>${k.expected ? "per month, " + formatEur(k.expected) + " counted" : "per month, computed from the goal"}</em></div>
-    <div class="kpi"><small>Recurring targets</small><b>${formatEur(k.recurring)}</b><em>rent, groceries, subscriptions</em></div></div>`;
+    <div class="m3-card m3-card--elevated kpi"><small>Typical income</small><b>${formatEur(k.income)}</b><em>committed typical figure</em></div>
+    <div class="m3-card m3-card--elevated kpi"><small>Savings target</small><b>${formatEur(k.savings)}</b><em>${k.expected ? "per month, " + formatEur(k.expected) + " counted" : "per month, computed from the goal"}</em></div>
+    <div class="m3-card m3-card--elevated kpi"><small>Recurring targets</small><b>${formatEur(k.recurring)}</b><em>rent, groceries, subscriptions</em></div></div>`;
 }
 
 function goalHtml(g) {
   if (!g) return "";
-  return `<div class="card"><h2>Goal progress</h2>
+  return `<div class="m3-card m3-card--elevated card"><h2>Goal progress</h2>
     <div class="track"><div class="seg-saved" style="width:${g.pctSaved}%"></div><div class="seg-pend" style="width:${g.pctExpected}%"></div></div>
     <p class="sub">${formatEur(g.saved)} saved + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p></div>`;
 }
@@ -70,14 +70,15 @@ function goalHtml(g) {
 function chartHtml(vm) {
   if (!vm.months.length) return `<div class="empty">No months yet.</div>`;
   const mx = Math.max(...vm.months.map((m) => m.spend), 1);
-  const bars = vm.months.map((m, i) => {
+  /* bars with 4px corners in the accent; the amount above and the month under
+     each in Label small, at the same size on every screen (kave chart rules) */
+  const bars = vm.months.map((m) => {
     /* a refund-heavy month can total below zero: draw no bar, keep its label */
-    const h = Math.max(0, m.spend / mx * 110), x = 20 + i * 66;
-    return `<rect class="bar" x="${x}" y="${125 - h}" width="40" height="${h}" rx="4"/>` +
-      `<text x="${x + 20}" y="140" text-anchor="middle">${esc(m.label.slice(2))}</text>` +
-      `<text x="${x + 20}" y="${120 - h}" text-anchor="middle">${formatEur(m.spend)}</text>`;
+    const pct = Math.max(0, m.spend / mx * 100);
+    return `<div class="bc-col"><span class="m3-label-s bc-n">${formatEur(m.spend)}</span>` +
+      `<span class="bc-bar" style="height:${pct.toFixed(1)}%"></span><span class="m3-label-s bc-l">${esc(m.label.slice(2))}</span></div>`;
   }).join("");
-  return `<div class="sub">Spend by month, one-offs excluded</div><svg viewBox="0 0 ${20 + vm.months.length * 66} 150" role="img" aria-label="Spend by month">${bars}</svg>`;
+  return `<div class="sub">Spend by month, one-offs excluded</div><div class="bc" role="img" aria-label="Spend by month">${bars}</div>`;
 }
 
 function catsHtml(vm) {
@@ -95,8 +96,8 @@ function oneOffsHtml(list) {
 
 export function overviewHtml(vm, ctx, me = "") {
   return `${chips(vm, ctx, me)}${kpisHtml(vm.kpis, ctx)}${goalHtml(vm.goal)}
-    <div class="two"><div class="card"><h2>Where it went</h2>${chartHtml(vm)}${oneOffsHtml(vm.oneOffs)}</div>
-    <div class="card pane">${catsHtml(vm)}</div></div>`;
+    <div class="two"><div class="m3-card m3-card--elevated card"><h2>Where it went</h2>${chartHtml(vm)}${oneOffsHtml(vm.oneOffs)}</div>
+    <div class="m3-card m3-card--elevated card pane">${catsHtml(vm)}</div></div>`;
 }
 
 /* Pure overview, with the status of a failed refresh on top. Used when the
@@ -111,28 +112,38 @@ export function settingsHtml(settings, themeOk = true, tokenDraft = null) {
   const warn = themeOk ? "" :
     `<div class="note alert" role="alert">Theme preload BLOCKED: recompute the CSP hash (see README).</div>`;
   const pal = settings.palette === "chartreuse" ? "chartreuse" : "cobalt";
-  const sw = (id, name) => `<button class="swatch swatch-${id}${pal === id ? " is-on" : ""}" data-action="palette" data-palette="${id}" aria-pressed="${pal === id}">` +
-    `<i>${pal === id ? '<span class="m3-icon">check</span>' : ""}</i><span class="m3-label-m">${name}</span></button>`;
+  const HEX = { cobalt: "#1a73e8", chartreuse: "#d7d63a" };
+  const sw = (id, name) => `<button type="button" class="set-swatch" data-action="palette" data-palette="${id}" aria-pressed="${pal === id}" aria-label="${name}">` +
+    `<span class="m3-swatch${pal === id ? " is-selected" : ""}" style="--kave-k:${HEX[id]}"><span class="m3-swatch__check m3-icon"${pal === id ? "" : " hidden"}>check</span></span>` +
+    `<span class="m3-label-m">${name}</span></button>`;
   return `${warn}<div class="m3-list-header m3-title-s">Theme</div>
-    <div class="card"><div class="swatches">${sw("cobalt", "Cobalt")}${sw("chartreuse", "Chartreuse")}</div>
+    <div class="m3-card m3-card--elevated card"><div class="set-swatches" role="group" aria-label="Theme colour">${sw("cobalt", "Cobalt")}${sw("chartreuse", "Chartreuse")}</div>
     <p class="sub">Light or dark follows the phone.</p></div>
     <div class="m3-list-header m3-title-s">Who are you?</div>
-    <div class="card"><div class="row"><button class="m3-chip${settings.me === "hugo" ? " is-selected" : ""}" data-action="who" data-who="hugo" aria-pressed="${settings.me === "hugo"}">Hugo</button>
+    <div class="m3-card m3-card--elevated card"><div class="row"><button class="m3-chip${settings.me === "hugo" ? " is-selected" : ""}" data-action="who" data-who="hugo" aria-pressed="${settings.me === "hugo"}">Hugo</button>
     <button class="m3-chip${settings.me === "isa" ? " is-selected" : ""}" data-action="who" data-who="isa" aria-pressed="${settings.me === "isa"}">Isa</button></div></div>
     <div class="m3-list-header m3-title-s">Advanced</div>
-    <div class="card"><h2>GitHub token</h2>
+    <div class="m3-card m3-card--elevated card"><h2>GitHub token</h2>
     <p class="sub">Read access to the private hub repo. It stays on this device.</p>
-    <div class="row"><input id="tokenInput" type="password" autocomplete="off" value="${esc(tokenDraft == null ? settings.token : tokenDraft)}" aria-label="GitHub token">
+    <div class="row"><label class="m3-field token-field"><span class="m3-field__label">GitHub token</span><input id="tokenInput" class="m3-field__input" type="password" autocomplete="off" value="${esc(tokenDraft == null ? settings.token : tokenDraft)}" aria-label="GitHub token"></label>
     <button class="m3-btn m3-btn--filled" data-action="save-token">Save</button></div></div>`;
 }
 
-/* Material 3 navigation: a bar on the phone, a rail on wide screens (the same
-   markup, laid out by styles.css). */
-const TABS = { overview: ["Overview", "savings"], settings: ["Settings", "settings"] };
+/* Material 3 navigation, as Ladle and Compass: the menu button (top bar on the
+   phone, top of the rail on wide screens) opens the drawer, which holds
+   Settings (Settings is not a tab, spec section 7). Stash has one page,
+   Overview, so the phone has no navigation bar. */
+export const TITLES = { overview: "Overview", settings: "Settings" };
 export function navHtml(tab) {
-  return Object.entries(TABS).map(([t, [label, icon]]) =>
-    `<button class="navbtn m3-nav-item${t === tab ? " is-active" : ""}" data-action="tab" data-tab="${t}" aria-current="${t === tab}">` +
-    `<span class="m3-nav-item__pill"><span class="m3-icon${t === tab ? " m3-icon--fill" : ""}">${icon}</span></span><span class="m3-label-m">${label}</span></button>`).join("");
+  return `<button type="button" class="m3-icon-btn" data-action="menu" aria-label="Menu"><span class="m3-icon">menu</span></button>` +
+    `<div class="m3-rail__items"><button type="button" class="m3-rail__item${tab === "overview" ? " is-active" : ""}" data-action="tab" data-tab="overview" aria-current="${tab === "overview"}">` +
+    `<span class="m3-rail__pill"><span class="m3-icon${tab === "overview" ? " m3-icon--fill" : ""}">savings</span></span><span class="m3-label-m">Overview</span></button></div>`;
+}
+
+export function drawerHtml(tab) {
+  const item = (t, icon) => `<button type="button" class="m3-drawer__item${t === tab ? " is-active" : ""}" data-action="tab" data-tab="${t}">` +
+    `<span class="m3-icon">${icon}</span><span class="m3-drawer__label">${TITLES[t]}</span></button>`;
+  return `<div class="m3-drawer__head"><span class="m3-title-l">Kave Stash</span></div>${item("overview", "savings")}${item("settings", "settings")}`;
 }
 
 /* States the last good data survives. Anything else (rejected token, no
@@ -151,6 +162,9 @@ export function render(env, opts = {}) {
   const me = settings.me;
   document.getElementById("scopes").innerHTML = me ? scopesHtml(scope, me) : "";
   document.getElementById("nav").innerHTML = navHtml(tab);
+  document.getElementById("drawer").innerHTML = drawerHtml(tab);
+  document.getElementById("tabName").textContent = TITLES[tab] || "Stash";
+  document.getElementById("scopes").hidden = tab !== "overview";
   const view = document.getElementById("view");
   view.dataset.tab = tab; /* overview: wide + skinny (1120); settings: one column (720) */
   if (tab === "settings") {

@@ -61,8 +61,8 @@ test("a month with negative spend never draws a negative bar height", () => {
     { label: "2026-07", income: 3000, spend: -200, savedNet: 0, byCategory: {} },
     { label: "2026-08", income: 3000, spend: 2100, savedNet: 900, byCategory: { food: 300 } }] };
   const html = overviewHtml(buildView({ summary: neg, targets: T, now: NOW }), CTX);
-  ok(html.includes("<svg"), "chart drawn");
-  ok(!html.includes('height="-'), "negative height");
+  ok(html.includes('class="bc"'), "chart drawn (HTML bars since 06/11/2026)");
+  ok(!html.includes('height:-'), "negative height");
   ok(!html.includes("NaN"));
 });
 test("Settings warns loudly when the theme preload did not run", () => {

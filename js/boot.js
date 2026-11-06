@@ -38,8 +38,13 @@ async function load() {
   paintBackground();
 }
 
+function closeMenu() { document.getElementById("drawer").hidden = true; document.getElementById("drawerScrim").hidden = true; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+
 wire({
-  tab: (el) => { env.tab = el.dataset.tab; paint(); },
+  tab: (el) => { env.tab = el.dataset.tab; closeMenu(); paint(); },
+  menu: () => { const d = document.getElementById("drawer"); document.getElementById("drawerScrim").hidden = false; d.hidden = false; (d.querySelector(".m3-drawer__item") || d).focus(); },
+  "close-menu": () => closeMenu(),
   scope: (el) => { env.scope = el.dataset.scope; load(); },
   who: (el) => {
     store.setSetting("me", el.dataset.who); env.scope = el.dataset.who;
