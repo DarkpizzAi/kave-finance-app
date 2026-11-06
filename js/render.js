@@ -133,7 +133,7 @@ export function settingsHtml(settings, themeOk = true, tokenDraft = null) {
    phone, top of the rail on wide screens) opens the drawer, which holds
    Settings (Settings is not a tab, spec section 7). Stash has one page,
    Overview, so the phone has no navigation bar. */
-export const TITLES = { overview: "Overview", settings: "Settings" };
+export const TITLES = { overview: "Overview", settings: "Settings", roadmap: "Roadmap", search: "Search" };
 export function navHtml(tab) {
   return `<button type="button" class="m3-icon-btn" data-action="menu" aria-label="Menu"><span class="m3-icon">menu</span></button>` +
     `<div class="m3-rail__items"><button type="button" class="m3-rail__item${tab === "overview" ? " is-active" : ""}" data-action="tab" data-tab="overview" aria-current="${tab === "overview"}">` +
@@ -143,7 +143,39 @@ export function navHtml(tab) {
 export function drawerHtml(tab) {
   const item = (t, icon) => `<button type="button" class="m3-drawer__item${t === tab ? " is-active" : ""}" data-action="tab" data-tab="${t}">` +
     `<span class="m3-icon">${icon}</span><span class="m3-drawer__label">${TITLES[t]}</span></button>`;
-  return `<div class="m3-drawer__head"><span class="m3-title-l">Kave Stash</span></div>${item("overview", "savings")}${item("settings", "settings")}`;
+  return `<div class="m3-drawer__head"><span class="m3-title-l">Kave Stash</span></div>${item("overview", "savings")}${item("settings", "settings")}${item("roadmap", "route")}`;
+}
+
+/* The Roadmap page, as Ladle's and Compass's: each tab and what it is for,
+   then what is planned, marked Coming soon (spec section 7). */
+export function roadmapHtml() {
+  const row = (icon, name, text, soon) => `<div class="m3-list-item"><span class="m3-list-item__lead m3-list-item__lead--plain"><span class="m3-icon">${icon}</span></span>` +
+    `<div class="m3-list-item__text m3-list-item__text--wrap"><div class="m3-body-l">${name}</div><div class="m3-body-m m3-variant">${text}</div></div>` +
+    (soon ? `<span class="m3-chip roadmap-soon">Coming soon</span>` : "") + `</div>`;
+  return `<div class="m3-list-header m3-title-s">Tabs</div><div class="m3-grouped">` +
+    row("savings", "Overview", "Safe to spend each month, the goal, and where the money went, for each of you and the household.") +
+    `</div><div class="m3-list-header m3-title-s">Planned</div><div class="m3-grouped">` +
+    row("group", "Household", "The joint account, once its statement is imported.", true) +
+    row("trending_up", "One-offs", "Sales and other one-off money, caught by the sweep instead of by hand.", true) + `</div>`;
+}
+
+/* Search: the loaded view's categories, months and one-offs, filtered as you type. */
+export function searchHtml(vm, q = "") {
+  return `<label class="m3-field search-field"><span class="m3-field__label">Search</span><input id="searchInput" class="m3-field__input" type="search" autocomplete="off" value="${esc(q)}" aria-label="Search"></label><div id="searchResults">${searchResultsHtml(vm, q)}</div>`;
+}
+
+export function searchResultsHtml(vm, q = "") {
+  const items = vm ? [
+    ...vm.cats.map((c) => ({ kind: "Category", name: c.name, value: formatEur(c.amount) })),
+    ...vm.months.map((m) => ({ kind: "Month", name: m.label, value: formatEur(m.spend) })),
+    ...(vm.oneOffs || []).map((o) => ({ kind: "One-off", name: o.title, value: formatEur(o.amount) })),
+  ] : [];
+  const n = q.trim().toLowerCase();
+  const hits = n ? items.filter((i) => (i.name + " " + i.kind).toLowerCase().includes(n)) : items;
+  const list = hits.length
+    ? `<div class="m3-grouped">${hits.map((i) => `<div class="m3-list-item"><div class="m3-list-item__text"><div class="m3-body-l">${esc(i.name)}</div><div class="m3-body-m m3-variant">${i.kind}</div></div><span class="m3-list-item__trail m3-label-l">${i.value}</span></div>`).join("")}</div>`
+    : `<div class="empty">${vm ? "Nothing matches." : "Open the Overview first: search looks through what it loaded."}</div>`;
+  return list;
 }
 
 /* States the last good data survives. Anything else (rejected token, no
@@ -167,6 +199,14 @@ export function render(env, opts = {}) {
   document.getElementById("scopes").hidden = tab !== "overview";
   const view = document.getElementById("view");
   view.dataset.tab = tab; /* overview: wide + skinny (1120); settings: one column (720) */
+  if (tab === "roadmap") { view.innerHTML = roadmapHtml(); return; }
+  if (tab === "search") {
+    if (opts.keepView && document.getElementById("searchInput")) return;
+    const g = env.good && env.good.scope === scope ? env.good.loaded : (loaded && loaded.status === "ok" ? loaded : null);
+    env.searchVm = g ? env.buildView({ summary: g.summary, targets: g.targets }) : null;
+    view.innerHTML = searchHtml(env.searchVm, env.query || "");
+    return;
+  }
   if (tab === "settings") {
     if (opts.keepView) return;
     const field = document.getElementById("tokenInput");

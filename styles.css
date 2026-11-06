@@ -85,3 +85,7 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
   .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .two { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: var(--kave-layout-spacer); align-items: start; }
 }
+
+/* search and roadmap */
+.search-field { width: 100%; }
+.roadmap-soon { pointer-events: none; }

@@ -52,6 +52,8 @@ const SHELL = [
   "js/render.js",
   "js/wire.js",
   "js/boot.js",
+  "js/top-bar.js",
+  "m3/kave-m3.js",
   "icon-192.png",
   "icon-512.png",
   "icon-512-maskable.png",
