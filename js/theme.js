@@ -1,7 +1,7 @@
 /* Stash: palette and colour-scheme handling.
 
-   The token values are NOT here. They live in tokens.css, generated from
-   brand/data/household-tokens.css in kave-hub. This module only decides
+   The token values are NOT here. They live in m3/kave-m3-tokens.css, generated
+   in kave-hub (brand/tools/make_m3_tokens.py). This module only decides
    which palette is selected and keeps the browser's colour-scheme in step.
 
    Light or dark follows the OS and nothing else. There is deliberately no
@@ -27,7 +27,7 @@ export function darkNow() {
 
 /* Tell the browser which way the page leans. This is what darkens the Android
    gesture bar; the status bar at the top is the phone's own and takes no
-   instruction from us. tokens.css also declares color-scheme, but an
+   instruction from us. The tokens also declare color-scheme, but an
    installed app can outlive a token change, so the app states it too. */
 export function syncColorScheme() {
   document.documentElement.style.colorScheme = darkNow() ? "dark" : "light";

@@ -28,7 +28,7 @@ the new code can produce, not by checking that it deployed.
 ## `m3/` is generated
 The Material 3 kit and tokens, by `brand/tools/sync-household-tokens.py` in
 kave-hub (with the icons). Never hand-edit. `styles.css` is layout only and
-defines no tokens. `tokens.css` (pre-Material) is still synced, not linked.
+defines no tokens. The pre-Material `tokens.css` was retired on 06/11/2026.
 
 ## Security
 XSS is the threat model: the GitHub token sits in localStorage. Every synced
