@@ -8,16 +8,18 @@
 body { margin: 0; }
 .shell { min-height: 100vh; }
 
-.app-header { position: sticky; top: 0; z-index: 5; min-height: 64px; }
+/* the installed app draws under the phone's status bar (viewport-fit=cover):
+   the bar, the rail, the drawer and search start below it, as Ladle's */
+.app-header { position: sticky; top: 0; z-index: 5; min-height: 64px; height: auto; padding-top: env(safe-area-inset-top, 0px); }
 .app-header .m3-top-bar__title { margin: 0; font-weight: 400; }
 .app-spacer { width: 48px; flex: none; }
-.app-rail { display: none; position: fixed; top: 0; bottom: 0; left: 0; z-index: 6; padding-top: var(--md-sys-measurement-space200); gap: var(--md-sys-measurement-space150); }
+.app-rail { display: none; position: fixed; top: 0; bottom: 0; left: 0; z-index: 6; padding-top: calc(var(--md-sys-measurement-space200) + env(safe-area-inset-top, 0px)); gap: var(--md-sys-measurement-space150); }
 .app-rail > .m3-icon-btn { margin: 0 0 var(--md-sys-measurement-space150); }
 .app-rail .m3-rail__item.is-active .m3-rail__pill { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
 .scopes { padding: 0 var(--kave-layout-margin-compact) var(--md-sys-measurement-space100); max-width: 720px; margin: 0 auto; }
 .scopes:empty, .scopes[hidden] { display: none; }
 
-.view { padding: var(--md-sys-measurement-space100) var(--kave-layout-margin-compact) var(--md-sys-measurement-space400);
+.view { padding: var(--md-sys-measurement-space100) var(--kave-layout-margin-compact) calc(var(--md-sys-measurement-space400) + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; gap: var(--md-sys-measurement-space150); max-width: 720px; margin: 0 auto; }
 
 /* cards: the kit's elevated card (white in light, black in dark), one radius */
@@ -89,3 +91,5 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
 /* search and roadmap */
 .m3-search-view__body { max-width: 720px; width: 100%; margin: 0 auto; }
 .roadmap-soon { pointer-events: none; }
+.m3-drawer { padding-top: calc(var(--md-sys-measurement-space150) + env(safe-area-inset-top, 0px)); }
+.m3-search-view { padding-top: env(safe-area-inset-top, 0px); }
