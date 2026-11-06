@@ -81,11 +81,11 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
   .app-header .m3-top-bar__title { padding-left: 48px; }
   .scopes, .view { padding-left: var(--kave-layout-margin); padding-right: var(--kave-layout-margin); }
   .view, .scopes { max-width: calc(1120px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 1120px - 2 * var(--kave-layout-margin)) / 2)); }
-  .view[data-tab="settings"] { max-width: calc(720px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 720px - 2 * var(--kave-layout-margin)) / 2)); }
+  .view[data-tab="settings"], .view[data-tab="roadmap"] { max-width: calc(720px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 720px - 2 * var(--kave-layout-margin)) / 2)); }
   .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .two { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: var(--kave-layout-spacer); align-items: start; }
 }
 
 /* search and roadmap */
-.search-field { width: 100%; }
+.m3-search-view__body { max-width: 720px; width: 100%; margin: 0 auto; }
 .roadmap-soon { pointer-events: none; }

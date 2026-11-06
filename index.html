@@ -102,7 +102,16 @@
     <div class="m3-chips scopes" id="scopes" role="tablist" aria-label="Whose money"></div>
     <main id="view" class="view"></main>
   </div>
-  <!-- Menu drawer: modal, holds Settings. The scrim closes it. -->
+  <!-- Search: the kit's full-screen search view, as Ladle's -->
+  <div id="searchPage" class="m3-search-view" role="dialog" aria-modal="true" aria-label="Search" hidden>
+    <div class="m3-search-view__bar">
+      <button type="button" class="m3-icon-btn" data-action="close-search" aria-label="Back"><span class="m3-icon">arrow_back</span></button>
+      <input id="searchInput" class="m3-search-view__input" type="text" placeholder="Search categories, months, one-offs" autocomplete="off"
+             autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search" />
+    </div>
+    <div id="searchResults" class="m3-search-view__body"></div>
+  </div>
+  <!-- Menu drawer: modal, holds Settings and Roadmap. The scrim closes it. -->
   <div id="drawerScrim" class="m3-scrim" data-action="close-menu" hidden></div>
   <nav id="drawer" class="m3-drawer" role="dialog" aria-modal="true" aria-label="Menu" hidden></nav>
   <script type="module" src="js/boot.js"></script>

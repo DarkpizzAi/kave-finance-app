@@ -133,7 +133,7 @@ export function settingsHtml(settings, themeOk = true, tokenDraft = null) {
    phone, top of the rail on wide screens) opens the drawer, which holds
    Settings (Settings is not a tab, spec section 7). Stash has one page,
    Overview, so the phone has no navigation bar. */
-export const TITLES = { overview: "Overview", settings: "Settings", roadmap: "Roadmap", search: "Search" };
+export const TITLES = { overview: "Overview", settings: "Settings", roadmap: "Roadmap" };
 export function navHtml(tab) {
   return `<button type="button" class="m3-icon-btn" data-action="menu" aria-label="Menu"><span class="m3-icon">menu</span></button>` +
     `<div class="m3-rail__items"><button type="button" class="m3-rail__item${tab === "overview" ? " is-active" : ""}" data-action="tab" data-tab="overview" aria-current="${tab === "overview"}">` +
@@ -159,11 +159,8 @@ export function roadmapHtml() {
     row("trending_up", "One-offs", "Sales and other one-off money, caught by the sweep instead of by hand.", true) + `</div>`;
 }
 
-/* Search: the loaded view's categories, months and one-offs, filtered as you type. */
-export function searchHtml(vm, q = "") {
-  return `<label class="m3-field search-field"><span class="m3-field__label">Search</span><input id="searchInput" class="m3-field__input" type="search" autocomplete="off" value="${esc(q)}" aria-label="Search"></label><div id="searchResults">${searchResultsHtml(vm, q)}</div>`;
-}
-
+/* Search: the loaded view's categories, months and one-offs, filtered as you
+   type, in the kit's full-screen search view (index.html #searchPage). */
 export function searchResultsHtml(vm, q = "") {
   const items = vm ? [
     ...vm.cats.map((c) => ({ kind: "Category", name: c.name, value: formatEur(c.amount) })),
@@ -189,6 +186,12 @@ const TRANSIENT = ["offline", "rate-limited", "error"];
    does not blank what the person was already reading.
    opts.keepView: repaint the scope tabs and nav only, and leave Settings
    alone (a typed but unsaved token must survive a background load). */
+/* The view model search looks through: the scope's last good data. */
+export function searchVm(env) {
+  const g = env.good && env.good.scope === env.scope ? env.good.loaded : (env.loaded && env.loaded.status === "ok" ? env.loaded : null);
+  return g ? env.buildView({ summary: g.summary, targets: g.targets }) : null;
+}
+
 export function render(env, opts = {}) {
   const { tab, scope, loaded, settings } = env;
   const me = settings.me;
@@ -200,13 +203,6 @@ export function render(env, opts = {}) {
   const view = document.getElementById("view");
   view.dataset.tab = tab; /* overview: wide + skinny (1120); settings: one column (720) */
   if (tab === "roadmap") { view.innerHTML = roadmapHtml(); return; }
-  if (tab === "search") {
-    if (opts.keepView && document.getElementById("searchInput")) return;
-    const g = env.good && env.good.scope === scope ? env.good.loaded : (loaded && loaded.status === "ok" ? loaded : null);
-    env.searchVm = g ? env.buildView({ summary: g.summary, targets: g.targets }) : null;
-    view.innerHTML = searchHtml(env.searchVm, env.query || "");
-    return;
-  }
   if (tab === "settings") {
     if (opts.keepView) return;
     const field = document.getElementById("tokenInput");

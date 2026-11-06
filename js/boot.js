@@ -8,7 +8,7 @@ import { store } from "./store.js";
 import { github } from "../github.js";
 import { loadScope, targetsPath } from "./data.js";
 import { buildView } from "./view-model.js";
-import { render, searchResultsHtml } from "./render.js";
+import { render, searchResultsHtml, searchVm } from "./render.js";
 import { wire } from "./wire.js";
 
 initTheme();
@@ -23,7 +23,7 @@ const env = { tab: "overview", scope: store.state.settings.me || "hugo", loaded:
 function paint(opts) { env.settings = store.state.settings; render(env, opts); }
 /* A background load must not rebuild Settings: the token field may hold
    something typed and not yet saved. */
-function paintBackground() { paint({ keepView: env.tab === "settings" || env.tab === "search" }); }
+function paintBackground() { paint({ keepView: env.tab === "settings" }); }
 
 async function load() {
   const scope = env.scope, token = store.state.settings.token;
@@ -40,21 +40,29 @@ async function load() {
 }
 
 function closeMenu() { document.getElementById("drawer").hidden = true; document.getElementById("drawerScrim").hidden = true; }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+function closeSearch() { document.getElementById("searchPage").hidden = true; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeMenu(); closeSearch(); } });
 /* search filters as you type: only the results redraw, so the field (and the
    phone's keyboard) stay as they are */
 document.addEventListener("input", (e) => {
   if (e.target.id !== "searchInput") return;
   env.query = e.target.value;
   const box = document.getElementById("searchResults");
-  if (box) box.innerHTML = searchResultsHtml(env.searchVm, env.query);
+  if (box) box.innerHTML = searchResultsHtml(searchVm(env), env.query);
 });
 
 wire({
   tab: (el) => { env.tab = el.dataset.tab; closeMenu(); paint(); window.scrollTo(0, 0); showTopBar(true); },
   menu: () => { const d = document.getElementById("drawer"); document.getElementById("drawerScrim").hidden = false; d.hidden = false; (d.querySelector(".m3-drawer__item") || d).focus(); },
   "close-menu": () => closeMenu(),
-  search: () => { env.tab = "search"; closeMenu(); paint(); const i = document.getElementById("searchInput"); if (i) i.focus(); },
+  search: () => {
+    closeMenu();
+    const page = document.getElementById("searchPage"), i = document.getElementById("searchInput");
+    page.hidden = false;
+    document.getElementById("searchResults").innerHTML = searchResultsHtml(searchVm(env), i.value);
+    i.focus();
+  },
+  "close-search": () => closeSearch(),
   scope: (el) => { env.scope = el.dataset.scope; load(); },
   who: (el) => {
     store.setSetting("me", el.dataset.who); env.scope = el.dataset.who;
