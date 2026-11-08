@@ -1,19 +1,24 @@
 import { test, eq, ok } from "./run.js";
-import { overviewHtml, statusHtml, scopesHtml, whoHtml, settingsHtml, staleOverviewHtml } from "../js/render.js";
+import { overviewHtml, statusHtml, scopesHtml, whoHtml, settingsHtml, staleOverviewHtml, trendHtml } from "../js/render.js";
 import { buildView } from "../js/view-model.js";
 
 const NOW = new Date("2026-10-04T10:00:00Z");
 const CTX = { scope: "hugo", targetsFile: "hugo/data/targets.md" };
 const SUMMARY = {
   generated: "2026-09-28T09:00:00Z", kind: "calendar", savedSoFar: 6000,
-  months: [{ label: "2026-08", income: 3000, spend: 2100, savedNet: 900, byCategory: { food: 300 } }],
-  oneOffs: [{ slug: "x", title: "<img src=x onerror=alert(1)>", description: "", amount: -50 }],
+  months: [
+    { label: "2026-07", income: 3000, spend: 1800, savedNet: 1200, byCategory: { food: 300 } },
+    { label: "2026-08", income: 3000, spend: 2100, savedNet: 900, byCategory: { food: 300 } }],
+  oneOffs: [],
+  exceptional: [{ title: "<img src=x onerror=alert(1)>", category: "flat", start: "2026-08", end: "2026-08", amount: 50 }],
 };
-const T = { goal: 30000, deadline: "12/2027", expected: 6000, income: 3000, recurring: 900 };
+const T = { goal: 30000, deadline: "12/2027", expected: 6000, income: 3000 };
 
-test("overview shows the safe-to-spend figure and the goal line", () => {
+test("overview shows the three tiles and the goal line", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
-  ok(html.includes("900 €"), "safe to spend");
+  for (const l of ["Left after saving / month", "Typical income", "Savings target"]) ok(html.includes(l), l);
+  ok(!html.includes("Safe to spend") && !html.includes("Recurring"), "old tiles gone");
+  ok(html.includes("1 800 €"), "left after saving");
   ok(html.includes("6 000 € saved + 6 000 € on its way"), "goal line");
   ok(html.includes("15 months to go"), "months");
 });
@@ -28,7 +33,7 @@ test("a synced string is escaped, not interpreted", () => {
   ok(html.includes("&lt;img"), "escaped tag expected");
 });
 test("an empty summary draws an empty note, not a chart", () => {
-  const html = overviewHtml(buildView({ summary: { ...SUMMARY, months: [], oneOffs: [] }, targets: T, now: NOW }), CTX);
+  const html = overviewHtml(buildView({ summary: { ...SUMMARY, months: [], oneOffs: [], exceptional: [] }, targets: T, now: NOW }), CTX);
   ok(html.includes("No months yet")); ok(!html.includes("<svg"));
 });
 test("a stale summary says how old it is", () => {
@@ -61,7 +66,8 @@ test("a month with negative spend never draws a negative bar height", () => {
     { label: "2026-07", income: 3000, spend: -200, savedNet: 0, byCategory: {} },
     { label: "2026-08", income: 3000, spend: 2100, savedNet: 900, byCategory: { food: 300 } }] };
   const html = overviewHtml(buildView({ summary: neg, targets: T, now: NOW }), CTX);
-  ok(html.includes('class="bc"'), "chart drawn (HTML bars since 06/11/2026)");
+  ok(html.includes('class="cb"'), "chart drawn");
+  ok(!html.includes('height="-'), "negative bar height");
   ok(!html.includes('height:-'), "negative height");
   ok(!html.includes("NaN"));
 });
@@ -82,7 +88,37 @@ test("a transient failure keeps the last good overview under a note", () => {
     const html = staleOverviewHtml(s, CTX, vm, "hugo");
     ok(html.startsWith('<div class="note"'), s + " note first");
     ok(html.includes("last data that loaded"), s + " says it is old");
-    ok(html.includes("Safe to spend"), s + " overview kept");
+    ok(html.includes("Left after saving"), s + " overview kept");
   }
   ok(staleOverviewHtml("offline", CTX, vm, "hugo").includes("You are offline"));
+});
+test("plain titles: no YYYY-MM anywhere a person reads", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
+  ok(!/\d{4}-\d{2}/.test(html.replace(/data-key="[^"]*"/g, "")), "no raw month keys in text");
+  ok(html.includes("Where August's money went"));
+});
+test("chart: no legend, lines named at their end, selected bar marked", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, selected: "2026-07" }), CTX);
+  ok(html.includes(">Saved</text>")); ok(html.includes("Target"));
+  ok(!html.includes("legend")); ok(html.includes('aria-pressed="true"'));
+});
+test("trend text is signed; a big rise carries the error class", () => {
+  ok(trendHtml({ name: "food", now: 450, avg: 200, delta: 250, big: true }).includes("trend--big"));
+  ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }).includes("▼ -"));
+});
+test("Month / Year segmented button", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
+  ok(html.includes('data-action="period-mode"')); ok(html.includes('data-mode="year" aria-pressed="true"'));
+});
+test("header chip: data up to and imported", () => {
+  const s = { ...SUMMARY, lastDate: "2026-08-31" };
+  ok(overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX).includes("data up to 31 Aug 2026 - imported 28 Sep 2026"));
+});
+test("one-offs and trends cards: empty states and escaped titles", () => {
+  const s = { ...SUMMARY, exceptional: [{ title: "<b>Tax</b>", category: "income-tax", start: "2026-08", end: "2026-08", amount: 300 }] };
+  const html = overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX);
+  ok(html.includes("&lt;b&gt;Tax") && !html.includes("<b>Tax</b>"));
+  const none = overviewHtml(buildView({ summary: { ...SUMMARY, exceptional: [] }, targets: T, now: NOW }), CTX);
+  ok(none.includes("None in August.")); ok(none.includes("Not enough months yet."));
+  ok(!none.includes("NaN"));
 });
