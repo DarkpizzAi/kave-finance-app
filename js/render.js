@@ -106,15 +106,15 @@ function chartHtml(vm) {
   const last = per.length - 1;
   /* one point alone: name it above the point, not over it */
   const solo = per.length === 1;
-  const ends = `<text class="cb-end cb-end--saved" x="${(cx(last) + (solo ? 0 : 8)).toFixed(1)}" y="${(y(per[last].saved) + (solo ? -10 : 4)).toFixed(1)}"${solo ? ' text-anchor="middle"' : ""}>Saved</text>` +
+  const ends = `<text class="cb-end cb-end--saved" x="${(cx(last) + (solo ? 0 : 8)).toFixed(1)}" y="${(solo ? Math.min(y(per[last].saved), y(Math.max(0, per[last].spend))) - 8 : y(per[last].saved) + 4).toFixed(1)}"${solo ? ' text-anchor="middle"' : ""}>Saved</text>` +
     (vm.savingsTarget != null ? `<text class="cb-end" x="${W - R}" y="${(y(vm.savingsTarget) - 6).toFixed(1)}" text-anchor="end">Target ${formatEur(vm.savingsTarget)}</text>` : "");
   const what = vm.mode === "year" ? "year" : "month";
   return `${modeHtml(vm.mode)}<p class="sub">Bars: what you spent. Line: what you saved. Dashed line: your savings target.</p>` +
     `<svg class="cb" viewBox="0 0 ${W + 48} ${H}" role="group" aria-label="Spent and saved by ${what}">${tgt}<polyline class="cb-line" points="${pts}"/>${groups}${ends}</svg>`;
 }
 
-export function trendHtml(t) {
-  return `<div class="rank rank--3"><span>${esc(t.name)}</span><span class="trend${t.big ? " trend--big" : ""}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))} vs usual</span><b>${formatEur(t.now)}</b></div>`;
+export function trendHtml(t, year = false) {
+  return `<div class="rank rank--3"><span>${esc(t.name)}</span><span class="trend${t.big ? " trend--big" : ""}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))} ${year ? "vs last year" : "vs usual"}</span><b>${formatEur(t.now)}</b></div>`;
 }
 
 function trendsHtml(vm) {
@@ -125,7 +125,7 @@ function trendsHtml(vm) {
   const exs = vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(when(e.start))}${e.end !== e.start ? " to " + esc(when(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`);
   const ex = regs.length + exs.length ? regs.concat(exs).join("") : `<p class="sub">None in ${esc(vm.periodName)}.</p>`;
   const tr = vm.trends.length
-    ? vm.trends.map(trendHtml).join("")
+    ? vm.trends.map((t) => trendHtml(t, year)).join("")
     : `<p class="sub">${year ? "No year before to compare with." : "Not enough months yet."}</p>`;
   return `<h2>One-off spends</h2><p class="sub">Kept out of the normal ${year ? "years" : "months"}.</p>${ex}` +
     `<h2 class="h-gap">What changed in ${esc(vm.periodName)}</h2><p class="sub">${year ? "Against the same months of the year before." : "Against the average of the three months before."}</p>${tr}`;

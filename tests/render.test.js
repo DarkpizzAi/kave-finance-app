@@ -106,6 +106,7 @@ test("chart: no legend, lines named at their end, selected bar marked", () => {
 test("trend text is signed; a big rise carries the error class", () => {
   ok(trendHtml({ name: "food", now: 450, avg: 200, delta: 250, big: true }).includes("trend--big"));
   ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }).includes("▼ -"));
+  ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }, true).includes("vs last year"));
 });
 test("Month / Year segmented button", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
@@ -115,6 +116,8 @@ test("year view: one-offs carry their year; a lone year names Saved above its po
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
   ok(html.includes("Aug 2026"), "year on one-off");
   ok(/cb-end--saved"[^>]*text-anchor="middle"/.test(html), "solo label");
+  const ly = +html.match(/cb-end--saved" x="[^"]*" y="([^"]*)"/)[1], bt = +html.match(/class="cb-bar[^"]*" x="[^"]*" y="([^"]*)"/)[1];
+  ok(ly < bt, "solo label above the bar");
   ok(!overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX).includes("Aug 2026<"), "month view stays short");
 });
 test("header chip: data up to and imported", () => {
