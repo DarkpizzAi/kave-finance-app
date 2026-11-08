@@ -54,4 +54,8 @@ test("trends use all months, not only the six shown", () => {
   const t = trends(allMonthBuckets(MONTHS), "2026-02", "month", new Set());
   eq(t.map((x) => x.name), ["food"]);   // Nov-Jan average 366.7 vs 300
 });
+test("a running year is compared with the same months of the year before", () => {
+  const ms = [M("2025-01", 0, 0, { food: 100 }), M("2025-12", 0, 0, { food: 900 }), M("2026-01", 0, 0, { food: 100 })];
+  eq(trends(buckets(ms, "year", NOW), "2026", "year", new Set()), []);   // Jan vs Jan, not vs the full 2025
+});
 test("month names", () => { eq(monthName("2026-08"), "August"); });

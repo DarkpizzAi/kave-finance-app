@@ -23,12 +23,13 @@ export function buckets(months, mode, now = new Date()) {
     const by = new Map();
     for (const m of months) {
       const y = m.label.slice(0, 4);
-      const b = by.get(y) || { key: y, label: y, spend: 0, saved: 0, byCategory: {}, last: m.label };
+      const b = by.get(y) || { key: y, label: y, spend: 0, saved: 0, byCategory: {}, last: m.label, months: [] };
       b.spend += m.spend; b.saved += m.savedNet; add(b.byCategory, m.byCategory); b.last = m.label;
+      b.months.push({ mm: m.label.slice(5), byCategory: m.byCategory || {} });
       by.set(y, b);
     }
     const thisYear = String(now.getFullYear());
-    return [...by.values()].map((b) => ({ key: b.key, spend: b.spend, saved: b.saved, byCategory: b.byCategory,
+    return [...by.values()].map((b) => ({ key: b.key, spend: b.spend, saved: b.saved, byCategory: b.byCategory, months: b.months,
       label: b.key === thisYear || !b.last.endsWith("-12") ? `${b.key} so far` : b.key }));
   }
   return allMonthBuckets(months).slice(-6);
@@ -42,7 +43,13 @@ export function trends(list, key, mode, skip) {
   const i = list.findIndex((b) => b.key === key);
   const need = mode === "year" ? 1 : 3;
   if (i < need) return [];
-  const prev = list.slice(i - need, i), cur = list[i];
+  const cur = list[i];
+  /* a year is compared with the same months of the year before, so a year
+     still running is not set against a full one */
+  const prev = mode === "year" && cur.months && list[i - 1].months
+    ? [{ byCategory: list[i - 1].months.filter((m) => cur.months.some((c) => c.mm === m.mm))
+        .reduce((a, m) => add(a, m.byCategory), {}) }]
+    : list.slice(i - need, i);
   const names = new Set([...prev.flatMap((b) => Object.keys(b.byCategory)), ...Object.keys(cur.byCategory)]);
   const out = [];
   for (const name of names) {

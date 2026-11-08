@@ -111,6 +111,12 @@ test("Month / Year segmented button", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
   ok(html.includes('data-action="period-mode"')); ok(html.includes('data-mode="year" aria-pressed="true"'));
 });
+test("year view: one-offs carry their year; a lone year names Saved above its point", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
+  ok(html.includes("Aug 2026"), "year on one-off");
+  ok(/cb-end--saved"[^>]*text-anchor="middle"/.test(html), "solo label");
+  ok(!overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX).includes("Aug 2026<"), "month view stays short");
+});
 test("header chip: data up to and imported", () => {
   const s = { ...SUMMARY, lastDate: "2026-08-31" };
   ok(overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX).includes("data up to 31 Aug 2026 - imported 28 Sep 2026"));

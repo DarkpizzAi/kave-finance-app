@@ -104,7 +104,9 @@ function chartHtml(vm) {
   const tgt = vm.savingsTarget != null
     ? `<line class="cb-tgt" x1="${L}" x2="${W - R}" y1="${y(vm.savingsTarget).toFixed(1)}" y2="${y(vm.savingsTarget).toFixed(1)}"/>` : "";
   const last = per.length - 1;
-  const ends = `<text class="cb-end cb-end--saved" x="${(cx(last) + 8).toFixed(1)}" y="${(y(per[last].saved) + 4).toFixed(1)}">Saved</text>` +
+  /* one point alone: name it above the point, not over it */
+  const solo = per.length === 1;
+  const ends = `<text class="cb-end cb-end--saved" x="${(cx(last) + (solo ? 0 : 8)).toFixed(1)}" y="${(y(per[last].saved) + (solo ? -10 : 4)).toFixed(1)}"${solo ? ' text-anchor="middle"' : ""}>Saved</text>` +
     (vm.savingsTarget != null ? `<text class="cb-end" x="${W - R}" y="${(y(vm.savingsTarget) - 6).toFixed(1)}" text-anchor="end">Target ${formatEur(vm.savingsTarget)}</text>` : "");
   const what = vm.mode === "year" ? "year" : "month";
   return `${modeHtml(vm.mode)}<p class="sub">Bars: what you spent. Line: what you saved. Dashed line: your savings target.</p>` +
@@ -119,13 +121,14 @@ function trendsHtml(vm) {
   const year = vm.mode === "year";
   const regs = (vm.oneOffs || []).filter((o) => o.amount < 0).map((o) =>
     `<div class="rank rank--3"><span>${esc(o.title)}</span><span class="sub">${esc(o.description || "")}</span><b>${formatEur(-o.amount)}</b></div>`);
-  const exs = vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(ml(e.start))}${e.end !== e.start ? " to " + esc(ml(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`);
+  const when = (k) => year ? `${ml(k)} ${k.slice(0, 4)}` : ml(k);
+  const exs = vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(when(e.start))}${e.end !== e.start ? " to " + esc(when(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`);
   const ex = regs.length + exs.length ? regs.concat(exs).join("") : `<p class="sub">None in ${esc(vm.periodName)}.</p>`;
   const tr = vm.trends.length
     ? vm.trends.map(trendHtml).join("")
     : `<p class="sub">${year ? "No year before to compare with." : "Not enough months yet."}</p>`;
   return `<h2>One-off spends</h2><p class="sub">Kept out of the normal ${year ? "years" : "months"}.</p>${ex}` +
-    `<h2 class="h-gap">What changed in ${esc(vm.periodName)}</h2><p class="sub">Against the average of the ${year ? "year" : "three months"} before.</p>${tr}`;
+    `<h2 class="h-gap">What changed in ${esc(vm.periodName)}</h2><p class="sub">${year ? "Against the same months of the year before." : "Against the average of the three months before."}</p>${tr}`;
 }
 
 function catsHtml(vm) {
