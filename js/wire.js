@@ -9,4 +9,12 @@ export function wire(actions) {
     const fn = actions[el.dataset.action];
     if (fn) fn(el);
   });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    const el = ev.target.closest && ev.target.closest('[data-action][role="button"]');
+    if (!el) return;
+    ev.preventDefault();
+    const fn = actions[el.dataset.action];
+    if (fn) fn(el);
+  });
 }

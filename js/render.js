@@ -231,7 +231,7 @@ const TRANSIENT = ["offline", "rate-limited", "error"];
 /* The view model search looks through: the scope's last good data. */
 export function searchVm(env) {
   const g = env.good && env.good.scope === env.scope ? env.good.loaded : (env.loaded && env.loaded.status === "ok" ? env.loaded : null);
-  return g ? env.buildView({ summary: g.summary, targets: g.targets }) : null;
+  return g ? env.buildView({ summary: g.summary, targets: g.targets, mode: env.mode, selected: env.selected }) : null;
 }
 
 export function render(env, opts = {}) {
@@ -255,7 +255,7 @@ export function render(env, opts = {}) {
   const ctx = { scope, targetsFile: env.targetsPath(scope) };
   if (!settings.token) { view.innerHTML = statusHtml("no-token", ctx); return; }
   const good = env.good && env.good.scope === scope ? env.good.loaded : null;
-  const draw = (r) => env.buildView({ summary: r.summary, targets: r.targets });
+  const draw = (r) => env.buildView({ summary: r.summary, targets: r.targets, mode: env.mode, selected: env.selected });
   if (!loaded) {
     view.innerHTML = good ? overviewHtml(draw(good), ctx, me) : `<div class="note">Loading...</div>`;
     return;

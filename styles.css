@@ -44,6 +44,9 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
 .kpi.hero b { color: var(--md-sys-color-primary); font-size: 28px; line-height: 36px; }
 .kpi small, .kpi em { font-size: 12px; line-height: 16px; font-style: normal; color: inherit; }
 .kpi:not(.hero) small, .kpi:not(.hero) em { color: var(--md-sys-color-on-surface-variant); }
+.kpi { display: flex; flex-direction: column; }
+.kpi b { white-space: nowrap; }
+.kpi.hero { grid-column: 1 / -1; }
 .kpi b { font-size: 22px; line-height: 28px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .kpi.none b { font-size: 16px; line-height: 24px; color: var(--md-sys-color-on-surface-variant); }
 
@@ -52,11 +55,24 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
 .seg-saved { background: var(--md-sys-color-primary-container); }
 .seg-pend { background: repeating-linear-gradient(45deg, var(--md-sys-color-primary-container) 0 6px, var(--md-sys-color-secondary-container) 6px 12px); }
 
-/* the month bars: 4px corners, the amount above and the month under in Label small */
-.bc { display: flex; align-items: stretch; gap: var(--md-sys-measurement-space150); height: 200px; padding-top: var(--md-sys-measurement-space100); }
-.bc-col { flex: 1; max-width: 64px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: var(--md-sys-measurement-space50); min-width: 0; }
-.bc-bar { width: 100%; border-radius: 4px; background: var(--md-sys-color-primary-container); min-height: 0; display: block; }
-.bc-n, .bc-l { color: var(--md-sys-color-on-surface-variant); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* combined chart: bars spent, line saved, dashed target; lines named at their end */
+.pane-col { display: grid; gap: var(--md-sys-measurement-space150); align-content: start; }
+.h-gap { margin-top: var(--md-sys-measurement-space200); }
+.cb { width: 100%; height: auto; display: block; }
+.cb-hit { fill: transparent; }
+.cb-bar { fill: var(--md-sys-color-primary-container); }
+.cb-bar.is-selected { fill: var(--md-sys-color-primary); }
+.cb-line { fill: none; stroke: var(--md-sys-color-primary); stroke-width: 2.5; }
+.cb-dot { fill: var(--md-sys-color-primary); }
+.cb-tgt { stroke: var(--md-sys-color-on-surface-variant); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.cb-l { font-size: 11px; fill: var(--md-sys-color-on-surface-variant); text-anchor: middle; }
+.cb-end { font-size: 11px; fill: var(--md-sys-color-on-surface-variant); }
+.cb-end--saved { fill: var(--md-sys-color-primary); font-weight: 500; }
+g[data-action] { cursor: pointer; outline: none; }
+g[data-action]:focus-visible .cb-hit { stroke: var(--md-sys-color-primary); stroke-width: 2; }
+.trend { font-size: 12px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
+.trend--big { color: var(--md-sys-color-error); }
+.rank--3 { grid-template-columns: minmax(0, 1fr) auto auto; }
 
 .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--md-sys-measurement-space150); }
 .rank { display: grid; grid-template-columns: 7rem 1fr 4.5rem; gap: var(--md-sys-measurement-space150); align-items: center; padding: var(--md-sys-measurement-space50) 0; font-size: 14px; }
@@ -87,7 +103,8 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
   .scopes, .view { padding-left: var(--kave-layout-margin); padding-right: var(--kave-layout-margin); }
   .view, .scopes { max-width: calc(1120px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 1120px - 2 * var(--kave-layout-margin)) / 2)); }
   .view[data-tab="settings"], .view[data-tab="roadmap"] { max-width: calc(720px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 720px - 2 * var(--kave-layout-margin)) / 2)); }
-  .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpi.hero { grid-column: auto; }
   .two { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: var(--kave-layout-spacer); align-items: start; }
 }
 

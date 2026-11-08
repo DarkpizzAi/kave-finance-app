@@ -18,7 +18,7 @@ github.setToken(store.state.settings.token);
 /* loaded: newest result for loadedScope (null = nothing to show yet).
    good: { scope, loaded } for the last ok result; render() keeps it on screen
    through a transient failure or a refresh in flight. */
-const env = { tab: "overview", scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
+const env = { tab: "overview", mode: "month", selected: null, scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
               good: null, settings: store.state.settings, buildView, targetsPath };
 
 /* Until a token unlocks it, only the gate shows (gate.js), as Ladle and Compass. */
@@ -30,7 +30,7 @@ const GATE = {
     catch { github.setToken(was); return false; }
   },
   save: (t) => { store.setSetting("token", t); github.setToken(t); env.loaded = null; env.loadedScope = null; env.good = null; paint(); load(); },
-  who: (w) => { store.setSetting("me", w); env.scope = w; env.loaded = null; env.loadedScope = null; paint(); load(); },
+  who: (w) => { store.setSetting("me", w); env.scope = w; env.selected = null; env.loaded = null; env.loadedScope = null; paint(); load(); },
   palette: (p) => { store.setSetting("palette", p); applyPalette(p); paint(); },
 };
 function paint(opts) {
@@ -92,9 +92,11 @@ wire({
     i.focus();
   },
   "close-search": () => closeSearch(),
-  scope: (el) => { env.scope = el.dataset.scope; load(); },
+  scope: (el) => { env.scope = el.dataset.scope; env.selected = null; load(); },
+  "period-mode": (el) => { env.mode = el.dataset.mode; env.selected = null; paint(); },
+  "period-pick": (el) => { env.selected = env.selected === el.dataset.key ? null : el.dataset.key; paint(); },
   who: (el) => {
-    store.setSetting("me", el.dataset.who); env.scope = el.dataset.who;
+    store.setSetting("me", el.dataset.who); env.scope = el.dataset.who; env.selected = null;
     env.loaded = null; env.loadedScope = null; paint(); load();
   },
   palette: (el) => { store.setSetting("palette", el.dataset.palette); applyPalette(el.dataset.palette); paint(); },
