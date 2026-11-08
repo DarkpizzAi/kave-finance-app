@@ -1,5 +1,6 @@
 import { test, eq, ok } from "./run.js";
 import { overviewHtml, statusHtml, scopesHtml, whoHtml, settingsHtml, staleOverviewHtml, trendHtml } from "../js/render.js";
+import { searchResultsHtml } from "../js/render.js";
 import { buildView } from "../js/view-model.js";
 
 const NOW = new Date("2026-10-04T10:00:00Z");
@@ -121,4 +122,19 @@ test("one-offs and trends cards: empty states and escaped titles", () => {
   const none = overviewHtml(buildView({ summary: { ...SUMMARY, exceptional: [] }, targets: T, now: NOW }), CTX);
   ok(none.includes("None in August.")); ok(none.includes("Not enough months yet."));
   ok(!none.includes("NaN"));
+});
+test("registered one-offs show as spends in every period, escaped", () => {
+  const s = { ...SUMMARY, exceptional: [], oneOffs: [
+    { slug: "trip", title: "<i>Trip</i>", description: "Flights & hotel", amount: -1500 },
+    { slug: "sale", title: "Sold bike", description: "", amount: 200 }] };
+  for (const sel of [null, "2026-07"]) {
+    const html = overviewHtml(buildView({ summary: s, targets: T, now: NOW, selected: sel }), CTX);
+    ok(html.includes("&lt;i&gt;Trip") && !html.includes("<i>Trip"), "escaped title");
+    ok(html.includes("1 500 €") && html.includes("Flights &amp; hotel"), "amount and description");
+    ok(!html.includes("Sold bike") && !html.includes("None in"), "income one-off skipped, no empty note");
+  }
+});
+test("search rows name months in words", () => {
+  const html = searchResultsHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), "");
+  ok(html.includes("August 2026") && !/\d{4}-\d{2}/.test(html));
 });

@@ -4,6 +4,7 @@
 
 import { escapeHtml as esc } from "./util.js";
 import { formatEur } from "./calc.js";
+import { monthName } from "./period.js";
 import { themeBootRan } from "./theme.js";
 
 const NAMES = { hugo: "Hugo", isa: "Isa", household: "Household" };
@@ -116,9 +117,10 @@ export function trendHtml(t) {
 
 function trendsHtml(vm) {
   const year = vm.mode === "year";
-  const ex = vm.exceptional.length
-    ? vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(ml(e.start))}${e.end !== e.start ? " to " + esc(ml(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`).join("")
-    : `<p class="sub">None in ${esc(vm.periodName)}.</p>`;
+  const regs = (vm.oneOffs || []).filter((o) => o.amount < 0).map((o) =>
+    `<div class="rank rank--3"><span>${esc(o.title)}</span><span class="sub">${esc(o.description || "")}</span><b>${formatEur(-o.amount)}</b></div>`);
+  const exs = vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(ml(e.start))}${e.end !== e.start ? " to " + esc(ml(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`);
+  const ex = regs.length + exs.length ? regs.concat(exs).join("") : `<p class="sub">None in ${esc(vm.periodName)}.</p>`;
   const tr = vm.trends.length
     ? vm.trends.map(trendHtml).join("")
     : `<p class="sub">${year ? "No year before to compare with." : "Not enough months yet."}</p>`;
@@ -204,7 +206,7 @@ export function roadmapHtml() {
 export function searchResultsHtml(vm, q = "") {
   const items = vm ? [
     ...vm.cats.map((c) => ({ kind: "Category", name: c.name, value: formatEur(c.amount) })),
-    ...vm.periods.map((m) => ({ kind: vm.mode === "year" ? "Year" : "Month", name: m.label, value: formatEur(m.spend) })),
+    ...vm.periods.map((m) => ({ kind: vm.mode === "year" ? "Year" : "Month", name: vm.mode === "year" ? m.label : `${monthName(m.key)} ${m.key.slice(0, 4)}`, value: formatEur(m.spend) })),
     ...(vm.oneOffs || []).map((o) => ({ kind: "One-off", name: o.title, value: formatEur(o.amount) })),
   ] : [];
   const n = q.trim().toLowerCase();
