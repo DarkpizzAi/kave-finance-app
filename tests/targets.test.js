@@ -13,15 +13,18 @@ const FULL = `# Example targets
 `;
 
 test("parseTargets reads every row, including a space in a thousand", () => {
-  eq(parseTargets(FULL), { goal: 30000, deadline: "12/2027", expected: 6000, income: 3000, recurring: 900 });
+  eq(parseTargets(FULL), { goal: 30000, deadline: "12/2027", expected: 6000, income: 3000 });
 });
 test("placeholders and blanks are null, never NaN", () => {
   const md = "| Savings goal | [amount] | |\n| Deadline | [MM/YYYY] | |\n| Expected money | | |\n| Typical income | abc | |\n";
-  eq(parseTargets(md), { goal: null, deadline: null, expected: null, income: null, recurring: null });
+  eq(parseTargets(md), { goal: null, deadline: null, expected: null, income: null });
 });
 test("missing or empty file is all null", () => {
-  const none = { goal: null, deadline: null, expected: null, income: null, recurring: null };
+  const none = { goal: null, deadline: null, expected: null, income: null };
   eq([parseTargets(""), parseTargets(null), parseTargets(undefined)], [none, none, none]);
+});
+test("an old Recurring targets row is ignored", () => {
+  eq(parseTargets("| Recurring targets | 900 | |").recurring, undefined);
 });
 test("CRLF files and unknown rows are fine", () => {
   eq(parseTargets("| Savings goal | 5000 | |\r\n| Whatever | 1 | |\r\n").goal, 5000);

@@ -21,8 +21,8 @@ export function savingsTarget({ goal, saved, expected, months }) {
   return Math.max((goal - saved - (expected || 0)) / months, 0);
 }
 
-export function safeToSpend({ income, savings, recurring }) {
-  return income - savings - recurring;
+export function leftAfterSaving({ income, savings }) {
+  return income - savings;
 }
 
 /* Solid segment = saved, striped segment = expected. Both are capped so the

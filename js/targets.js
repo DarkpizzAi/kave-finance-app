@@ -10,11 +10,10 @@ const RULES = [
   ["deadline", /^deadline$/i],
   ["expected", /^expected money$/i],
   ["income", /^typical income$/i],
-  ["recurring", /^recurring targets$/i],
 ];
 
 export function parseTargets(md) {
-  const out = { goal: null, deadline: null, expected: null, income: null, recurring: null };
+  const out = { goal: null, deadline: null, expected: null, income: null };
   for (const line of String(md == null ? "" : md).split(/\r?\n/)) {
     const t = line.trim();
     if (!t.startsWith("|")) continue;

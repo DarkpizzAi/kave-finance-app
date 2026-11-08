@@ -1,5 +1,5 @@
 import { test, eq, ok } from "./run.js";
-import { monthsLeft, savingsTarget, safeToSpend, goalBar, staleDays, STALE_AFTER_DAYS, formatEur } from "../js/calc.js";
+import { monthsLeft, savingsTarget, leftAfterSaving, goalBar, staleDays, STALE_AFTER_DAYS, formatEur } from "../js/calc.js";
 
 const NOW = new Date("2026-10-04T10:00:00Z");
 
@@ -18,8 +18,8 @@ test("savingsTarget spreads what is left over the months", () => {
 test("savingsTarget is 0 once the goal is covered", () => {
   eq(savingsTarget({ goal: 1000, saved: 900, expected: 500, months: 3 }), 0);
 });
-test("safeToSpend is income minus savings minus recurring", () => {
-  eq(safeToSpend({ income: 3000, savings: 1200, recurring: 900 }), 900);
+test("leftAfterSaving is income minus the savings target", () => {
+  eq(leftAfterSaving({ income: 3000, savings: 1200 }), 1800);
 });
 test("goalBar caps at 100 percent and never overflows", () => {
   const b = goalBar({ goal: 1000, saved: 900, expected: 500 });
