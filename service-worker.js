@@ -46,6 +46,7 @@ const SHELL = [
   "js/theme.js",
   "js/store.js",
   "js/calc.js",
+  "js/period.js",
   "js/targets.js",
   "js/view-model.js",
   "js/data.js",
