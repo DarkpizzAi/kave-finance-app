@@ -84,12 +84,14 @@ function chartHtml(vm) {
   const isOn = (k) => curKey != null && (year ? k.startsWith(curKey + "-") : k === curKey);
   const band = per.map((m, i) => isOn(m.key)
     ? `<rect class="cb-band" x="${(cx(i) - step / 2).toFixed(1)}" y="${T - 12}" width="${step}" height="${H - T - B + 16}" rx="8"/>` : "").join("");
+  /* only the highest capped line of a month is labelled, so labels never stack */
+  const top = (m) => ["income", "spend", "saved"].reduce((a, k) => (m[k] > m[a] ? k : a), "income");
   const groups = per.map((m, i) => {
     const on = !year && isOn(m.key);
     return `<g data-action="period-pick" data-key="${esc(m.key)}" aria-pressed="${on}" role="button" tabindex="0" aria-label="${esc(monthName(m.key))} ${esc(m.key.slice(0, 4))}">` +
       `<rect class="cb-hit" x="${(cx(i) - step / 2).toFixed(1)}" y="0" width="${step}" height="${H - 20}"/>` +
       ["income", "spend", "saved"].map((k) => `<circle class="cb-dot cb-dot--${k}" cx="${cx(i).toFixed(1)}" cy="${y(m[k]).toFixed(1)}" r="${on ? 5 : 3}"/>` +
-        (m[k] > mx ? `<text class="cb-over cb-end--${k}" x="${cx(i).toFixed(1)}" y="${T - 14}" text-anchor="middle">▲ ${esc(kfmt1(m[k]))}</text>` : "")).join("") +
+        (m[k] > mx && k === top(m) ? `<text class="cb-over cb-end--${k}" x="${cx(i).toFixed(1)}" y="${T - 14}" text-anchor="middle">▲ ${esc(kfmt1(m[k]))}</text>` : "")).join("") +
       `<text class="cb-l${on ? " is-on" : ""}" x="${cx(i).toFixed(1)}" y="${H - 26}">${esc(ml(m.key))}</text></g>`;
   }).join("");
   const yrs = per.map((m, i) => [m, i]).filter(([m, i]) => i === 0 || m.key.slice(0, 4) !== per[i - 1].key.slice(0, 4)).map(([m, i]) => {

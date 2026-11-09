@@ -136,6 +136,13 @@ test("one tall month is capped and carries its own figure", () => {
   ok(html.includes("▲ 24k"), "the capped point is labelled");
   ok(!html.includes("NaN"));
 });
+test("two capped lines in one month give one label", () => {
+  const m = (label, income, spend) => ({ label, income, spend, savedNet: income - spend, byCategory: {} });
+  const s = { ...SUMMARY, months: [m("2026-01", 3000, 1000), m("2026-02", 3000, 1000), m("2026-03", 24000, 18000), m("2026-04", 3000, 1000), m("2026-05", 3000, 1000)] };
+  const html = overviewHtml(buildView({ summary: s, targets: null, now: NOW }), CTX);
+  eq((html.match(/class="cb-over/g) || []).length, 1);
+  ok(html.includes("▲ 24k"));
+});
 test("line ends are named and never closer than 14px", () => {
   const s = { ...SUMMARY, months: [
     { label: "2026-07", income: 3000, spend: 1800, savedNet: 1200, byCategory: {} },
