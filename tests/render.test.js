@@ -17,7 +17,7 @@ const T = { goal: 30000, deadline: "12/2027", expected: 6000, income: 3000 };
 
 test("overview shows the three tiles and the goal line", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
-  for (const l of ["Left after saving / month", "Typical income", "Savings target"]) ok(html.includes(l), l);
+  for (const l of ["Left after saving / month", "Typical income", "Needed from now"]) ok(html.includes(l), l);
   ok(!html.includes("Safe to spend") && !html.includes("Recurring"), "old tiles gone");
   ok(html.includes("1 800 €"), "left after saving");
   ok(html.includes("6 000 € saved + 6 000 € on its way"), "goal line");
@@ -86,7 +86,7 @@ test("a transient failure keeps the last good overview under a note", () => {
 test("plain titles: no YYYY-MM anywhere a person reads", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
   ok(!/\d{4}-\d{2}/.test(html.replace(/data-key="[^"]*"/g, "")), "no raw month keys in text");
-  ok(html.includes("Where August's money went"));
+  ok(html.includes("August 2026") && html.includes("Where it went"));
 });
 test("chart: no legend, lines named at their end, selected month marked", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, selected: "2026-07" }), CTX);
@@ -103,7 +103,7 @@ test("one-offs and trends cards: empty states and escaped titles", () => {
   const html = overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX);
   ok(html.includes("&lt;b&gt;Tax") && !html.includes("<b>Tax</b>"));
   const none = overviewHtml(buildView({ summary: { ...SUMMARY, exceptional: [] }, targets: T, now: NOW }), CTX);
-  ok(none.includes("None in August.")); ok(none.includes("Not enough months yet."));
+  ok(!none.includes("One-off spends"), "no empty one-offs heading");
   ok(!none.includes("NaN"));
 });
 test("registered one-offs show as spends in every period, escaped", () => {
@@ -114,7 +114,7 @@ test("registered one-offs show as spends in every period, escaped", () => {
     const html = overviewHtml(buildView({ summary: s, targets: T, now: NOW, selected: sel }), CTX);
     ok(html.includes("&lt;i&gt;Trip") && !html.includes("<i>Trip"), "escaped title");
     ok(html.includes("1 500 €") && html.includes("Flights &amp; hotel"), "amount and description");
-    ok(!html.includes("Sold bike") && !html.includes("None in"), "income one-off skipped, no empty note");
+    ok(!html.includes("Sold bike"), "income one-off skipped");
   }
 });
 test("search rows name months in words", () => {
@@ -164,4 +164,48 @@ test("year label selects the year, months of that year are banded", () => {
   ok(html.includes('data-key="2026-07"'), "months keep month keys");
   eq((html.match(/class="cb-band"/g) || []).length, 2, "both 2026 months banded");
   eq(modeOf("2026-07"), "month");
+});
+
+/* v0.11 period card, drill-down and plan card */
+const TOPS = [["2026-08-03", "Bistro <one>", 60], ["2026-08-09", "Market", 50], ["2026-08-14", "Cafe", 40], ["2026-08-20", "Bakery", 30], ["2026-08-27", "Deli", 20]]
+  .map(([date, name, amount]) => ({ date, name, amount }));
+const TOPSUM = { ...SUMMARY, exceptional: [], months: [SUMMARY.months[0], { ...SUMMARY.months[1], byCategory: { food: 300, "tail-spend": 80 }, top: { food: TOPS } }] };
+test("a fall is green with a down triangle", () => {
+  const down = trendHtml({ name: "food", now: 150, avg: 200, delta: -50, big: false });
+  ok(down.includes('class="trend trend--down"') && down.includes("▼ -50"), down);
+  const up = trendHtml({ name: "food", now: 250, avg: 200, delta: 50, big: false });
+  ok(up.includes("trend--up") && up.includes("▲ +"));
+});
+test("tapping a category lists its top five", () => {
+  const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX, "", "food");
+  eq((html.match(/class="ctop__r"/g) || []).length, 5);
+  ok(html.includes(">03/08<") && html.includes(">27/08<"), "dd/mm dates");
+  ok(html.includes("Bistro &lt;one&gt;") && !html.includes("<one>"), "names escaped");
+  ok(/data-action="cat-pick" data-cat="food" role="button" tabindex="0" aria-expanded="true"/.test(html), "row expanded");
+  ok(!overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX).includes("ctop"), "closed by default");
+});
+test("an opened category with no top data says so", () => {
+  const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX, "", "tail-spend");
+  ok(html.includes("No single spends to show."));
+});
+test("year view asks for a month", () => {
+  const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW, mode: "year", selected: "2026" }), CTX, "", "food");
+  ok(html.includes("Pick a month to see its biggest spends.")); ok(!html.includes("ctop__r"));
+});
+test("tail-spend shows as Small buys with its icon", () => {
+  const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX);
+  ok(html.includes("Small buys") && html.includes("shopping_bag") && html.includes("restaurant"));
+  ok(!/>tail-spend</.test(html) && !html.replace(/data-cat="[^"]*"/g, "").includes("tail-spend"), "raw name hidden");
+});
+test("saved stat is green, target is the month's", () => {
+  const vm = buildView({ summary: TOPSUM, targets: T, now: NOW });
+  vm.curTarget = 773;
+  const html = overviewHtml(vm, CTX);
+  const period = html.slice(html.indexOf('<div class="two">'), html.indexOf("Your plan"));
+  ok(period.includes("pstat--saved"), "saved stat"); ok(!period.includes("pstat--hero"), "no hero in period card");
+  ok(html.includes("vs target 773"), "month target");
+});
+test("plan card says Needed from now", () => {
+  const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX);
+  ok(html.includes("Needed from now")); ok(!html.includes("Savings target"));
 });

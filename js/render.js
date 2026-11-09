@@ -52,25 +52,6 @@ function chips(vm, ctx, me) {
   return out.length ? `<div class="meta">${out.join("")}</div>` : "";
 }
 
-function kpisHtml(k, ctx) {
-  const labels = ["Left after saving / month", "Typical income", "Savings target"];
-  if (!k) {
-    return `<div class="kpis">${labels
-      .map((l) => `<div class="m3-card m3-card--elevated kpi none"><small>${l}</small><b>No target set</b><em>add it in ${esc(ctx.targetsFile)}</em></div>`).join("")}</div>`;
-  }
-  return `<div class="kpis">
-    <div class="kpi hero"><small>${labels[0]}</small><b>${formatEur(k.left)}</b><em>income minus your savings target</em></div>
-    <div class="m3-card m3-card--elevated kpi"><small>${labels[1]}</small><b>${formatEur(k.income)}</b><em>committed typical figure</em></div>
-    <div class="m3-card m3-card--elevated kpi"><small>${labels[2]}</small><b>${formatEur(k.savings)}</b><em>${k.expected ? "per month, " + formatEur(k.expected) + " counted" : "per month, computed from the goal"}</em></div></div>`;
-}
-
-function goalHtml(g) {
-  if (!g) return "";
-  return `<div class="m3-card m3-card--elevated card"><h2>Savings goal</h2>
-    <div class="track"><div class="seg-saved" style="width:${g.pctSaved}%"></div><div class="seg-pend" style="width:${g.pctExpected}%"></div></div>
-    <p class="sub">${formatEur(g.saved)} saved + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p></div>`;
-}
-
 /* axis helpers: a rounded top, and "1k" style figures */
 function niceMax(v) { return Math.max(500, Math.ceil(v / 500) * 500); }
 function kfmt(v) { return Math.abs(v) >= 1000 ? (v / 1000) + "k" : String(v); }
@@ -124,41 +105,84 @@ function chartHtml(vm) {
     `<div class="cb-scroll"><svg class="cb" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="Income, spent and saved by month">${band}${grid}${tgt}${line("income")}${line("spend")}${line("saved")}${groups}${yrs}${endTxt}</svg></div></div>`;
 }
 
+/* display names and Material Symbols for ledger categories (spec section 5) */
+const LABEL = { "tail-spend": "Small buys" };
+const ICON = { housing: "home", food: "restaurant", leisure: "local_activity", travel: "flight", transport: "directions_bus",
+  subscriptions: "autorenew", health: "favorite", services: "build", "tail-spend": "shopping_bag", bizum: "swap_horiz" };
+/* a rise is error red, a fall is green */
+const trendSpan = (t, extra = "") => `<span class="trend ${t.delta > 0 ? "trend--up" : "trend--down"}${t.big ? " trend--big" : ""}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))}${extra}</span>`;
+
 export function trendHtml(t, year = false) {
-  return `<div class="rank rank--3"><span>${esc(t.name)}</span><span class="trend${t.big ? " trend--big" : ""}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))} ${year ? "vs last year" : "vs usual"}</span><b>${formatEur(t.now)}</b></div>`;
+  return `<div class="rank rank--3"><span>${esc(LABEL[t.name] || t.name)}</span>${trendSpan(t, year ? " vs last year" : " vs usual")}<b>${formatEur(t.now)}</b></div>`;
 }
 
-function trendsHtml(vm) {
+function topHtml(items, year) {
+  if (year) return `<p class="sub">Pick a month to see its biggest spends.</p>`;
+  if (!items.length) return `<p class="sub">No single spends to show.</p>`;
+  return items.slice(0, 5).map((it) => {
+    const d = String(it.date || "");
+    return `<div class="ctop__r"><span class="ctop__d">${esc(d.slice(8, 10))}/${esc(d.slice(5, 7))}</span><span>${esc(it.name)}</span><b>${formatEur(it.amount)}</b></div>`;
+  }).join("");
+}
+
+/* The selected month or year: stats, where it went (tap a row for its top 5),
+   and the one-offs kept out of the figures. */
+function periodHtml(vm, openCat) {
+  const c = vm.current; if (!c) return "";
   const year = vm.mode === "year";
+  /* a year's target is the sum of its months' targets */
+  const tgt = year
+    ? (vm.mtargets && vm.mtargets.length ? vm.periods.reduce((a, p, i) => a + (p.key.startsWith(c.key + "-") ? (vm.mtargets[i] || 0) : 0), 0) : null)
+    : vm.curTarget;
+  const diff = tgt != null ? c.saved - tgt : null;
+  const name = year ? c.label : `${monthName(c.key)} ${c.key.slice(0, 4)}`;
+  const stat = (l, v, cls = "") => `<div class="pstat${cls}"><small>${l}</small><b>${v}</b></div>`;
+  const when = (k) => year ? `${ml(k)} ${k.slice(0, 4)}` : ml(k);
   const regs = (vm.oneOffs || []).filter((o) => o.amount < 0).map((o) =>
     `<div class="rank rank--3"><span>${esc(o.title)}</span><span class="sub">${esc(o.description || "")}</span><b>${formatEur(-o.amount)}</b></div>`);
-  const when = (k) => year ? `${ml(k)} ${k.slice(0, 4)}` : ml(k);
   const exs = vm.exceptional.map((e) => `<div class="rank rank--3"><span>${esc(e.title)}</span><span class="sub">${esc(when(e.start))}${e.end !== e.start ? " to " + esc(when(e.end)) : ""}</span><b>${formatEur(e.amount)}</b></div>`);
-  const ex = regs.length + exs.length ? regs.concat(exs).join("") : `<p class="sub">None in ${esc(vm.periodName)}.</p>`;
-  const tr = vm.trends.length
-    ? vm.trends.map((t) => trendHtml(t, year)).join("")
-    : `<p class="sub">${year ? "No year before to compare with." : "Not enough months yet."}</p>`;
-  return `<h2>One-off spends</h2><p class="sub">Kept out of the normal ${year ? "years" : "months"}.</p>${ex}` +
-    `<h2 class="h-gap">What changed in ${esc(vm.periodName)}</h2><p class="sub">${year ? "Against the same months of the year before." : "Against the average of the three months before."}</p>${tr}`;
+  const tmap = vm.tmap || new Map((vm.trends || []).map((t) => [t.name, t]));
+  const sum = vm.cats.reduce((a, q) => a + q.amount, 0), top = vm.cats.length ? vm.cats[0].amount : 0;
+  const cats = vm.cats.map((x) => {
+    const t = tmap.get(x.name), pct = sum ? Math.round(x.amount / sum * 100) : 0;
+    const open = openCat === x.name;
+    const list = open ? `<div class="ctop">${topHtml(((c.top || {})[x.name]) || [], year)}</div>` : "";
+    return `<div class="crow${open ? " is-open" : ""}" data-action="cat-pick" data-cat="${esc(x.name)}" role="button" tabindex="0" aria-expanded="${open}">` +
+      `<span class="crow__n"><span class="m3-icon crow__i" aria-hidden="true">${ICON[x.name] || "category"}</span>${esc(LABEL[x.name] || x.name)}</span>` +
+      `<span class="crow__p">${pct}%</span>${t ? trendSpan(t) : "<span></span>"}<b>${formatEur(x.amount)}</b>` +
+      `<i><u style="width:${top ? x.amount / top * 100 : 0}%"></u></i></div>${list}`;
+  }).join("");
+  return `<div class="m3-card m3-card--elevated card"><h2>${esc(name)}</h2>
+    <div class="pstats">${stat("Income", formatEur(c.income))}${stat("Spent", formatEur(c.spend))}${stat("Saved", formatEur(c.saved), " pstat--saved")}` +
+    (diff != null ? stat(`vs target ${formatEur(tgt)}`, `${diff >= 0 ? "+" : "-"}${formatEur(Math.abs(diff))}`) : "") + `</div>
+    <h3 class="m3-title-s h-gap">Where it went</h3><p class="sub">${year
+      ? "Share of the year, and the change against the same months of the year before."
+      : "Share of the month (tap one for its top 5), and the change against the three months before."}</p>${cats || `<p class="sub">Nothing spent.</p>`}
+    ${regs.length + exs.length ? `<h3 class="m3-title-s h-gap">One-off spends</h3><p class="sub">Kept out of the figures above.</p>${regs.concat(exs).join("")}` : ""}</div>`;
 }
 
-function catsHtml(vm) {
-  if (!vm.cats.length) return "";
-  const mx = vm.cats[0].amount;
-  return `<h2>Where ${esc(vm.periodName)}'s money went</h2>` + vm.cats.map((c) =>
-    `<div class="rank"><span>${esc(c.name)}</span><i><u style="width:${c.amount / mx * 100}%"></u></i><b>${formatEur(c.amount)}</b></div>`).join("");
+/* The plan: the pace line (when the view model has one), the goal bar, then
+   what is left after saving, typical income and what is needed from now. */
+function planHtml(vm, ctx) {
+  const k = vm.kpis, g = vm.goal, p = vm.pace;
+  const paceLine = p && g ? `At your pace (${formatEur(p.avg)} a month) you reach ${formatEur(g.goal)} in <b>${esc(monthName(`${p.date.getFullYear()}-${String(p.date.getMonth() + 1).padStart(2, "0")}`))} ${p.date.getFullYear()}</b>` +
+    (p.early > 0 ? `, ${p.early} month${p.early === 1 ? "" : "s"} early.` : p.early < 0 ? `, ${-p.early} month${p.early === -1 ? "" : "s"} late.` : ", right on time.") : "";
+  return `<div class="m3-card m3-card--elevated card"><h2>Your plan</h2>${paceLine ? `<p class="pace">${paceLine}</p>` : ""}
+    ${g ? `<div class="track"><div class="seg-saved" style="width:${g.pctSaved}%"></div><div class="seg-pend" style="width:${g.pctExpected}%"></div></div>
+    <p class="sub">${formatEur(g.saved)} saved + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p>` : ""}
+    ${k ? `<div class="pstats h-gap"><div class="pstat pstat--hero"><small>Left after saving / month</small><b>${formatEur(k.left)}</b></div><div class="pstat"><small>Typical income</small><b>${formatEur(k.income)}</b></div><div class="pstat"><small>Needed from now</small><b>${formatEur(k.savings)} / month</b></div></div>`
+      : `<p class="sub">No target set: add it in ${esc(ctx.targetsFile)}.</p>`}</div>`;
 }
 
-export function overviewHtml(vm, ctx, me = "") {
-  return `${chips(vm, ctx, me)}${kpisHtml(vm.kpis, ctx)}${goalHtml(vm.goal)}
-    <div class="two"><div class="m3-card m3-card--elevated card"><h2>Spending and saving</h2>${chartHtml(vm)}</div>
-    <div class="pane-col"><div class="m3-card m3-card--elevated card pane">${trendsHtml(vm)}</div><div class="m3-card m3-card--elevated card pane">${catsHtml(vm)}</div></div></div>`;
+export function overviewHtml(vm, ctx, me = "", openCat = null) {
+  return `${chips(vm, ctx, me)}<div class="m3-card m3-card--elevated card"><h2>Spending and saving</h2>${chartHtml(vm)}</div>
+    <div class="two">${periodHtml(vm, openCat)}${planHtml(vm, ctx)}</div>`;
 }
 
 /* Pure overview, with the status of a failed refresh on top. Used when the
    last good result for this scope is still on screen. */
-export function staleOverviewHtml(status, ctx, vm, me = "") {
-  return statusHtml(status, ctx) + `<p class="sub">Showing the last data that loaded.</p>` + overviewHtml(vm, ctx, me);
+export function staleOverviewHtml(status, ctx, vm, me = "", openCat = null) {
+  return statusHtml(status, ctx) + `<p class="sub">Showing the last data that loaded.</p>` + overviewHtml(vm, ctx, me, openCat);
 }
 
 /* themeOk comes from themeBootRan() in theme.js, passed in so this stays pure.
@@ -273,14 +297,14 @@ export function render(env, opts = {}) {
   const good = env.good && env.good.scope === scope ? env.good.loaded : null;
   const draw = (r) => env.buildView({ summary: r.summary, targets: r.targets, mode: modeOf(env.selected), selected: env.selected });
   if (!loaded) {
-    view.innerHTML = good ? overviewHtml(draw(good), ctx, me) : `<div class="note">Loading...</div>`;
+    view.innerHTML = good ? overviewHtml(draw(good), ctx, me, env.openCat) : `<div class="note">Loading...</div>`;
     return;
   }
   if (loaded.status !== "ok") {
     view.innerHTML = good && TRANSIENT.includes(loaded.status)
-      ? staleOverviewHtml(loaded.status, ctx, draw(good), me)
+      ? staleOverviewHtml(loaded.status, ctx, draw(good), me, env.openCat)
       : statusHtml(loaded.status, ctx);
     return;
   }
-  view.innerHTML = overviewHtml(draw(loaded), ctx, me);
+  view.innerHTML = overviewHtml(draw(loaded), ctx, me, env.openCat);
 }

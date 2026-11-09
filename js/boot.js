@@ -18,7 +18,7 @@ github.setToken(store.state.settings.token);
 /* loaded: newest result for loadedScope (null = nothing to show yet).
    good: { scope, loaded } for the last ok result; render() keeps it on screen
    through a transient failure or a refresh in flight. */
-const env = { tab: "overview", selected: null, scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
+const env = { tab: "overview", selected: null, openCat: null, scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
               good: null, settings: store.state.settings, buildView, targetsPath };
 
 /* Until a token unlocks it, only the gate shows (gate.js), as Ladle and Compass. */
@@ -96,10 +96,11 @@ wire({
     i.focus();
   },
   "close-search": () => closeSearch(),
-  scope: (el) => { env.scope = el.dataset.scope; env.selected = null; load(); },
-  "period-pick": (el) => { env.selected = env.selected === el.dataset.key ? null : el.dataset.key; paint(); },
+  scope: (el) => { env.scope = el.dataset.scope; env.selected = null; env.openCat = null; load(); },
+  "cat-pick": (el) => { env.openCat = env.openCat === el.dataset.cat ? null : el.dataset.cat; paint(); },
+  "period-pick": (el) => { env.openCat = null; env.selected = env.selected === el.dataset.key ? null : el.dataset.key; paint(); },
   who: (el) => {
-    store.setSetting("me", el.dataset.who); env.scope = el.dataset.who; env.selected = null;
+    store.setSetting("me", el.dataset.who); env.scope = el.dataset.who; env.selected = null; env.openCat = null;
     env.loaded = null; env.loadedScope = null; paint(); load();
   },
   palette: (el) => { store.setSetting("palette", el.dataset.palette); applyPalette(el.dataset.palette); paint(); },

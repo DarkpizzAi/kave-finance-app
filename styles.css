@@ -139,3 +139,27 @@ body.gated > :not(#gate) { display: none !important; }
 .setup-row { display: flex; flex-wrap: wrap; gap: var(--md-sys-measurement-space150); align-items: center; justify-content: center; }
 .gate .m3-dialog__actions { margin-top: 0; }
 .setup-swatch { width: 48px; height: 48px; }
+
+/* period and plan cards (v0.11) */
+.pstats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--md-sys-measurement-space100); }
+.pstat { background: var(--md-sys-color-surface-container-high); border-radius: 12px; padding: var(--md-sys-measurement-space100) var(--md-sys-measurement-space150); display: flex; flex-direction: column; }
+.pstat small { font-size: 12px; line-height: 16px; color: var(--md-sys-color-on-surface-variant); }
+.pstat b { font-size: 20px; line-height: 28px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pstat--hero { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.pstat--hero small { color: var(--md-sys-color-on-secondary-container); }
+.pstat--saved b, .pstat--saved small { color: var(--kave-data-outdoors); }
+.crow { display: grid; grid-template-columns: minmax(0, 1fr) 3rem 5.5rem 5rem; gap: var(--md-sys-measurement-space100); align-items: center; padding: var(--md-sys-measurement-space100) 0 var(--md-sys-measurement-space50); font-size: 16px; cursor: pointer; }
+.crow__n { display: flex; align-items: center; gap: var(--md-sys-measurement-space100); min-width: 0; }
+.crow__i { font-size: 20px; color: var(--md-sys-color-on-surface-variant); }
+.crow__p { color: var(--md-sys-color-on-surface-variant); text-align: right; font-size: 14px; }
+.crow b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.crow .trend { text-align: right; font-size: 12px; }
+.crow i { grid-column: 1 / -1; display: block; height: 8px; background: var(--md-sys-color-surface-container-highest); border-radius: 4px; overflow: hidden; }
+.crow u { display: block; height: 100%; background: var(--md-sys-color-primary-container); }
+.ctop { padding: var(--md-sys-measurement-space50) 0 var(--md-sys-measurement-space150) var(--md-sys-measurement-space400); }
+.ctop__r { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 5rem; gap: var(--md-sys-measurement-space100); padding: var(--md-sys-measurement-space50) 0; font-size: 14px; }
+.ctop__d { color: var(--md-sys-color-on-surface-variant); }
+.ctop__r b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.trend--up { color: var(--md-sys-color-error); }
+.trend--down { color: var(--kave-data-outdoors); }
+.pace { font-size: 16px; line-height: 24px; margin: var(--md-sys-measurement-space100) 0; }
