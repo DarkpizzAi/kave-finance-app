@@ -209,7 +209,7 @@ export function roadmapHtml() {
 export function searchResultsHtml(vm, q = "") {
   const items = vm ? [
     ...vm.cats.map((c) => ({ kind: "Category", name: c.name, value: formatEur(c.amount) })),
-    ...vm.periods.map((m) => ({ kind: vm.mode === "year" ? "Year" : "Month", name: vm.mode === "year" ? m.label : `${monthName(m.key)} ${m.key.slice(0, 4)}`, value: formatEur(m.spend) })),
+    ...vm.periods.map((m) => ({ kind: "Month", name: `${monthName(m.key)} ${m.key.slice(0, 4)}`, value: formatEur(m.spend) })),
     ...(vm.oneOffs || []).map((o) => ({ kind: "One-off", name: o.title, value: formatEur(o.amount) })),
   ] : [];
   const n = q.trim().toLowerCase();

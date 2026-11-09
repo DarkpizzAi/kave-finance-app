@@ -22,8 +22,10 @@ export function buildView({ summary, targets, now = new Date(), mode = "month", 
     }
   }
 
-  const periods = summary ? buckets(summary.months, mode, now) : [];
-  const current = pick(periods, selected);
+  /* the chart shows every month in both modes; a year is picked by tapping it */
+  const periods = summary ? allMonthBuckets(summary.months) : [];
+  const years = summary ? buckets(summary.months, "year", now) : [];
+  const current = pick(mode === "year" ? years : periods, selected);
   const exAll = summary && summary.exceptional ? summary.exceptional : [];
   const skip = new Set(exAll.map((e) => e.category));
   const key = current ? current.key : null;
@@ -51,7 +53,7 @@ export function buildView({ summary, targets, now = new Date(), mode = "month", 
 
   return {
     mtargets, curTarget, goal, kpis, mode, periods, current, selectedKey: selected || null,
-    trends: current ? trends(mode === "year" ? periods : allMonthBuckets(summary.months), key, mode, skip) : [],
+    trends: current ? trends(mode === "year" ? years : periods, key, mode, skip) : [],
     exceptional, cats,
     periodName: current ? (mode === "year" ? current.label : monthName(current.key)) : "",
     oneOffs: summary ? summary.oneOffs : [],

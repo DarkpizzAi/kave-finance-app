@@ -81,3 +81,28 @@ test("no targets file, no monthly targets", () => {
   const v = buildView({ summary: SUMMARY, targets: null, now: NOW });
   eq([v.mtargets, v.curTarget], [null, null]);
 });
+const mk = (n) => ({ generated: "2026-10-01T09:00:00Z", kind: "calendar", oneOffs: [],
+  savedSoFar: 100 * n.length, months: n.map((m, i) => ({ label: m, income: 0, spend: 0, savedNet: 100, byCategory: {} })) });
+const T2 = { goal: 2000, deadline: "11/2026", expected: 0 };
+test("year mode keeps monthly targets", () => {
+  const s = mk(["2026-07", "2026-08", "2026-09"]);
+  const m = buildView({ summary: s, targets: T2, now: NOW });
+  const y = buildView({ summary: s, targets: T2, now: NOW, mode: "year", selected: "2026" });
+  eq(y.mtargets.length, 3);
+  eq(y.mtargets, m.mtargets);
+  eq(y.curTarget, null);
+  eq(y.current.key, "2026");
+});
+test("more than six months keep every month", () => {
+  const s = mk(["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"]);
+  const v = buildView({ summary: s, targets: T2, now: NOW });
+  eq(v.periods.length, 8);
+  eq(v.mtargets.length, 8);
+  eq(v.mtargets[7], Math.round((2000 - 700) / 2));
+});
+test("a goal already reached gives a zero target", () => {
+  const s = mk(["2026-08", "2026-09"]);
+  const v = buildView({ summary: s, targets: { goal: 100, deadline: "11/2026", expected: 500 }, now: NOW });
+  eq(v.mtargets, [0, 0]);
+  eq(v.curTarget, 0);
+});

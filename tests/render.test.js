@@ -113,7 +113,8 @@ test("Month / Year segmented button", () => {
   ok(html.includes('data-action="period-mode"')); ok(html.includes('data-mode="year" aria-pressed="true"'));
 });
 test("year view: one-offs carry their year; a lone year names Saved above its point", () => {
-  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
+  const one = { ...SUMMARY, months: SUMMARY.months.slice(1) };
+  const html = overviewHtml(buildView({ summary: one, targets: T, now: NOW, mode: "year" }), CTX);
   ok(html.includes("Aug 2026"), "year on one-off");
   ok(/cb-end--saved"[^>]*text-anchor="middle"/.test(html), "solo label");
   const ly = +html.match(/cb-end--saved" x="[^"]*" y="([^"]*)"/)[1], bt = +html.match(/class="cb-bar[^"]*" x="[^"]*" y="([^"]*)"/)[1];
