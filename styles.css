@@ -147,3 +147,4 @@ body.gated > :not(#gate) { display: none !important; }
 .trend--up { color: var(--md-sys-color-on-surface-variant); }  /* red pending Isa's decision */
 .trend--down { color: var(--md-sys-color-on-surface-variant); }  /* green pending Isa's decision */
 .pace { font-size: 16px; line-height: 24px; }
+.cb-over { font-size: 11px; font-weight: 500; }

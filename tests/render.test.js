@@ -128,6 +128,14 @@ test("chart draws income, spent and saved as lines", () => {
   ok(!html.includes("cb-bar"), "no bars");
   ok(!html.includes("NaN"));
 });
+test("one tall month is capped and carries its own figure", () => {
+  const m = (label, income) => ({ label, income, spend: 1000, savedNet: income - 1000, byCategory: {} });
+  const s = { ...SUMMARY, months: [m("2026-01", 3000), m("2026-02", 3000), m("2026-03", 24000), m("2026-04", 3000), m("2026-05", 3000)] };
+  const html = overviewHtml(buildView({ summary: s, targets: null, now: NOW }), CTX);
+  ok(!html.includes(">24k<") && !html.includes(">20k<"), "axis stops well below the tall month");
+  ok(html.includes("▲ 24k"), "the capped point is labelled");
+  ok(!html.includes("NaN"));
+});
 test("line ends are named and never closer than 14px", () => {
   const s = { ...SUMMARY, months: [
     { label: "2026-07", income: 3000, spend: 1800, savedNet: 1200, byCategory: {} },

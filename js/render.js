@@ -54,6 +54,7 @@ function chips(vm, ctx, me) {
 
 /* axis helpers: a rounded top, and "1k" style figures */
 function niceMax(v) { return Math.max(500, Math.ceil(v / 500) * 500); }
+function kfmt1(v) { return (Math.round(v / 100) / 10) + "k"; }
 function kfmt(v) { return Math.abs(v) >= 1000 ? (v / 1000) + "k" : String(v); }
 
 /* Three lines (income, spent, saved) over every month on one horizontal
@@ -64,8 +65,13 @@ function chartHtml(vm) {
   const per = vm.periods, step = 56, H = 300, T = 28, B = 44, W = per.length * step + 96;
   const tg = vm.mtargets || [];
   const vals = per.flatMap((m) => [m.spend, m.saved, m.income]).concat(tg);
-  const mx = niceMax(Math.max(...vals)), mn = Math.min(0, Math.floor(Math.min(...vals) / 500) * 500);
-  const y = (v) => T + (mx - v) / (mx - mn) * (H - T - B);
+  /* the scale is capped so one tall month does not flatten the rest: at most
+     1.4 times the median month's highest line; anything above is pinned to the
+     top and carries its own figure */
+  const peaks = per.map((m) => Math.max(m.spend, m.saved, m.income)).sort((a, b) => a - b);
+  const cap = niceMax(1.4 * peaks[Math.floor(peaks.length / 2)]);
+  const mx = Math.min(niceMax(Math.max(...vals)), cap), mn = Math.min(0, Math.floor(Math.min(...vals) / 500) * 500);
+  const y = (v) => T + (mx - Math.min(v, mx)) / (mx - mn) * (H - T - B);
   const cx = (i) => step * i + step / 2 + 8;
   let grid = "", axis = "";
   for (let v = mn; v <= mx; v += 500) {
@@ -82,7 +88,8 @@ function chartHtml(vm) {
     const on = !year && isOn(m.key);
     return `<g data-action="period-pick" data-key="${esc(m.key)}" aria-pressed="${on}" role="button" tabindex="0" aria-label="${esc(monthName(m.key))} ${esc(m.key.slice(0, 4))}">` +
       `<rect class="cb-hit" x="${(cx(i) - step / 2).toFixed(1)}" y="0" width="${step}" height="${H - 20}"/>` +
-      ["income", "spend", "saved"].map((k) => `<circle class="cb-dot cb-dot--${k}" cx="${cx(i).toFixed(1)}" cy="${y(m[k]).toFixed(1)}" r="${on ? 5 : 3}"/>`).join("") +
+      ["income", "spend", "saved"].map((k) => `<circle class="cb-dot cb-dot--${k}" cx="${cx(i).toFixed(1)}" cy="${y(m[k]).toFixed(1)}" r="${on ? 5 : 3}"/>` +
+        (m[k] > mx ? `<text class="cb-over cb-end--${k}" x="${cx(i).toFixed(1)}" y="${T - 14}" text-anchor="middle">▲ ${esc(kfmt1(m[k]))}</text>` : "")).join("") +
       `<text class="cb-l${on ? " is-on" : ""}" x="${cx(i).toFixed(1)}" y="${H - 26}">${esc(ml(m.key))}</text></g>`;
   }).join("");
   const yrs = per.map((m, i) => [m, i]).filter(([m, i]) => i === 0 || m.key.slice(0, 4) !== per[i - 1].key.slice(0, 4)).map(([m, i]) => {
