@@ -144,6 +144,6 @@ body.gated > :not(#gate) { display: none !important; }
 .ctop__r { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 5rem; gap: var(--md-sys-measurement-space100); padding: var(--md-sys-measurement-space50) 0; font-size: 14px; }
 .ctop__d { color: var(--md-sys-color-on-surface-variant); }
 .ctop__r b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
-.trend--up { color: var(--md-sys-color-error); }
-.trend--down { color: var(--kave-data-outdoors); }
+.trend--up { color: var(--md-sys-color-on-surface-variant); }  /* red pending Isa's decision */
+.trend--down { color: var(--md-sys-color-on-surface-variant); }  /* green pending Isa's decision */
 .pace { font-size: 16px; line-height: 24px; }
