@@ -55,19 +55,35 @@ h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spa
 .seg-saved { background: var(--md-sys-color-primary-container); }
 .seg-pend { background: repeating-linear-gradient(45deg, var(--md-sys-color-primary-container) 0 6px, var(--md-sys-color-secondary-container) 6px 12px); }
 
-/* combined chart: bars spent, line saved, dashed target; lines named at their end */
+/* three-line chart: income, spent, saved; stepped dashed target; lines named at their end */
 .pane-col { display: grid; gap: var(--md-sys-measurement-space150); align-content: start; }
 .h-gap { margin-top: var(--md-sys-measurement-space200); }
-.cb { width: 100%; height: auto; display: block; }
+.cb-wrap { display: flex; align-items: flex-start; }
+.cb-axis { flex: none; display: block; }
+.cb-scroll { overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: thin; }
+.cb { display: block; width: auto; max-width: none; height: auto; }
 .cb-hit { fill: transparent; }
-.cb-bar { fill: var(--md-sys-color-primary-container); }
-.cb-bar.is-selected { fill: var(--md-sys-color-primary); }
-.cb-line { fill: none; stroke: var(--md-sys-color-primary); stroke-width: 2.5; }
-.cb-dot { fill: var(--md-sys-color-primary); }
-.cb-tgt { stroke: var(--md-sys-color-on-surface-variant); stroke-width: 1.5; stroke-dasharray: 6 4; }
-.cb-l { font-size: 11px; fill: var(--md-sys-color-on-surface-variant); text-anchor: middle; }
-.cb-end { font-size: 11px; fill: var(--md-sys-color-on-surface-variant); }
-.cb-end--saved { fill: var(--md-sys-color-primary); font-weight: 500; }
+.cb-band { fill: var(--md-sys-color-surface-container-highest); }
+.cb-grid { stroke: var(--md-sys-color-outline-variant); stroke-width: 1; opacity: .5; }
+.cb-grid--major { opacity: 1; }
+.cb-ax { font-size: 12px; fill: var(--md-sys-color-on-surface-variant); }
+.cb-line { fill: none; stroke-width: 2.5; }
+.cb-line--income { stroke: var(--md-sys-color-primary); }
+.cb-line--spend { stroke: var(--kave-data-food); }
+.cb-line--saved { stroke: var(--kave-data-outdoors); stroke-width: 3; }
+.cb-dot--income { fill: var(--md-sys-color-primary); }
+.cb-dot--spend { fill: var(--kave-data-food); }
+.cb-dot--saved { fill: var(--kave-data-outdoors); }
+.cb-tgt { fill: none; stroke: var(--md-sys-color-on-surface-variant); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.cb-l { font-size: 13px; fill: var(--md-sys-color-on-surface-variant); text-anchor: middle; }
+.cb-l.is-on { fill: var(--md-sys-color-on-surface); font-weight: 700; }
+.cb-yr { font-size: 12px; fill: var(--md-sys-color-primary); font-weight: 500; }
+.cb-yr.is-on { font-weight: 700; text-decoration: underline; }
+.cb-end { font-size: 12px; font-weight: 500; }
+.cb-end--income { fill: var(--md-sys-color-primary); }
+.cb-end--spend { fill: var(--kave-data-food); }
+.cb-end--saved { fill: var(--kave-data-outdoors); }
+.cb-end--tgt { fill: var(--md-sys-color-on-surface-variant); }
 g[data-action] { cursor: pointer; outline: none; }
 g[data-action]:focus-visible .cb-hit { stroke: var(--md-sys-color-primary); stroke-width: 2; }
 .trend { font-size: 12px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }

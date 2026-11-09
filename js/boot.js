@@ -18,7 +18,7 @@ github.setToken(store.state.settings.token);
 /* loaded: newest result for loadedScope (null = nothing to show yet).
    good: { scope, loaded } for the last ok result; render() keeps it on screen
    through a transient failure or a refresh in flight. */
-const env = { tab: "overview", mode: "month", selected: null, scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
+const env = { tab: "overview", selected: null, scope: store.state.settings.me || "hugo", loaded: null, loadedScope: null,
               good: null, settings: store.state.settings, buildView, targetsPath };
 
 /* Until a token unlocks it, only the gate shows (gate.js), as Ladle and Compass. */
@@ -36,7 +36,11 @@ const GATE = {
 function paint(opts) {
   env.settings = store.state.settings;
   if (renderGate(env.settings, GATE)) return;
+  /* the chart opens on the latest month and keeps its place across repaints */
+  const was = document.querySelector(".cb-scroll"), left = was ? was.scrollLeft : null;
   render(env, opts);
+  const sc = document.querySelector(".cb-scroll");
+  if (sc) sc.scrollLeft = left == null ? sc.scrollWidth : left;
 }
 /* A background load must not rebuild Settings: the token field may hold
    something typed and not yet saved. */
@@ -93,7 +97,6 @@ wire({
   },
   "close-search": () => closeSearch(),
   scope: (el) => { env.scope = el.dataset.scope; env.selected = null; load(); },
-  "period-mode": (el) => { env.mode = el.dataset.mode; env.selected = null; paint(); },
   "period-pick": (el) => { env.selected = env.selected === el.dataset.key ? null : el.dataset.key; paint(); },
   who: (el) => {
     store.setSetting("me", el.dataset.who); env.scope = el.dataset.who; env.selected = null;

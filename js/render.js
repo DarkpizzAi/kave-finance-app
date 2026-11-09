@@ -41,8 +41,6 @@ export function scopesHtml(current, me) {
 }
 
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-/* ISO date to "31 Aug 2026" */
-function dmy(iso) { const [y, m, d] = iso.slice(0, 10).split("-"); return `${+d} ${MON[+m - 1]} ${y}`; }
 /* "2026-08" to "Aug"; a year (or any other label) is left as it is */
 function ml(key) { return /^\d{4}-\d{2}$/.test(key) ? MON[+key.slice(5) - 1] : key; }
 
@@ -50,10 +48,6 @@ function chips(vm, ctx, me) {
   const out = [];
   if (vm.kind) out.push(`<span class="chip m3-chip">${vm.kind === "salary-cycle" ? "salary cycles" : "calendar months"}</span>`);
   if (vm.stale) out.push(`<span class="chip warn m3-chip">${esc(String(vm.stale.days))} days old</span>`);
-  else if (vm.generated) {
-    const imp = `imported ${dmy(vm.generated)}`;
-    out.push(`<span class="chip m3-chip">${esc(vm.lastDate ? `data up to ${dmy(vm.lastDate)} - ${imp}` : imp)}</span>`);
-  }
   if (me && ctx.scope !== me && ctx.scope !== "household") out.push(`<span class="chip m3-chip">viewing another person, read only</span>`);
   return out.length ? `<div class="meta">${out.join("")}</div>` : "";
 }
@@ -77,40 +71,57 @@ function goalHtml(g) {
     <p class="sub">${formatEur(g.saved)} saved + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p></div>`;
 }
 
-function modeHtml(mode) {
-  const b = (m, label) => `<button type="button" class="m3-chip${mode === m ? " is-selected" : ""}" data-action="period-mode" data-mode="${m}" aria-pressed="${mode === m}">${label}</button>`;
-  return `<div class="row" role="group" aria-label="Chart period">${b("month", "Month")}${b("year", "Year")}</div>`;
-}
+/* axis helpers: a rounded top, and "1k" style figures */
+function niceMax(v) { return Math.max(500, Math.ceil(v / 500) * 500); }
+function kfmt(v) { return Math.abs(v) >= 1000 ? (v / 1000) + "k" : String(v); }
 
+/* Three lines (income, spent, saved) over every month on one horizontal
+   scroll, a stepped monthly target, each line named at its right-hand end.
+   Month groups carry data-key "YYYY-MM"; the "2026 >" labels carry "YYYY". */
 function chartHtml(vm) {
   if (!vm.periods.length) return `<div class="empty">No months yet.</div>`;
-  const per = vm.periods, W = 600, H = 220, L = 8, R = 8, T = 24, B = 28;
-  const vals = per.flatMap((m) => [m.spend, m.saved]).concat(vm.savingsTarget || 0, 0);
-  const mx = Math.max(...vals, 1), mn = Math.min(...vals, 0);
+  const per = vm.periods, step = 56, H = 300, T = 28, B = 44, W = per.length * step + 96;
+  const tg = vm.mtargets || [];
+  const vals = per.flatMap((m) => [m.spend, m.saved, m.income]).concat(tg);
+  const mx = niceMax(Math.max(...vals)), mn = Math.min(0, Math.floor(Math.min(...vals) / 500) * 500);
   const y = (v) => T + (mx - v) / (mx - mn) * (H - T - B);
-  const step = (W - L - R) / per.length, bw = Math.min(40, step * 0.5);
-  const cx = (i) => L + step * i + step / 2;
+  const cx = (i) => step * i + step / 2 + 8;
+  let grid = "", axis = "";
+  for (let v = mn; v <= mx; v += 500) {
+    const major = v % 1000 === 0, yy = y(v).toFixed(1);
+    grid += `<line class="cb-grid${major ? " cb-grid--major" : ""}" x1="0" x2="${W}" y1="${yy}" y2="${yy}"/>`;
+    axis += `<text class="cb-ax" x="36" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${major ? esc(kfmt(v)) : "·"}</text>`;
+  }
+  const year = vm.mode === "year";
   const curKey = vm.current ? vm.current.key : null;
+  const isOn = (k) => curKey != null && (year ? k.startsWith(curKey + "-") : k === curKey);
+  const band = per.map((m, i) => isOn(m.key)
+    ? `<rect class="cb-band" x="${(cx(i) - step / 2).toFixed(1)}" y="${T - 12}" width="${step}" height="${H - T - B + 16}" rx="8"/>` : "").join("");
   const groups = per.map((m, i) => {
-    const on = !!vm.selectedKey && m.key === curKey;
-    const top = y(Math.max(0, m.spend)), base = y(0);
-    return `<g data-action="period-pick" data-key="${esc(m.key)}" aria-pressed="${on}" role="button" tabindex="0">` +
-      `<rect class="cb-hit" x="${(cx(i) - step / 2).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>` +
-      `<rect class="cb-bar${on ? " is-selected" : ""}" x="${(cx(i) - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, base - top).toFixed(1)}" rx="4"/>` +
-      `<circle class="cb-dot" cx="${cx(i).toFixed(1)}" cy="${y(m.saved).toFixed(1)}" r="4"/>` +
-      `<text class="cb-l" x="${cx(i).toFixed(1)}" y="${H - 8}">${esc(ml(m.label))}</text></g>`;
+    const on = !year && isOn(m.key);
+    return `<g data-action="period-pick" data-key="${esc(m.key)}" aria-pressed="${on}" role="button" tabindex="0" aria-label="${esc(monthName(m.key))} ${esc(m.key.slice(0, 4))}">` +
+      `<rect class="cb-hit" x="${(cx(i) - step / 2).toFixed(1)}" y="0" width="${step}" height="${H - 20}"/>` +
+      ["income", "spend", "saved"].map((k) => `<circle class="cb-dot cb-dot--${k}" cx="${cx(i).toFixed(1)}" cy="${y(m[k]).toFixed(1)}" r="${on ? 5 : 3}"/>`).join("") +
+      `<text class="cb-l${on ? " is-on" : ""}" x="${cx(i).toFixed(1)}" y="${H - 26}">${esc(ml(m.key))}</text></g>`;
   }).join("");
-  const pts = per.map((m, i) => `${cx(i).toFixed(1)},${y(m.saved).toFixed(1)}`).join(" ");
-  const tgt = vm.savingsTarget != null
-    ? `<line class="cb-tgt" x1="${L}" x2="${W - R}" y1="${y(vm.savingsTarget).toFixed(1)}" y2="${y(vm.savingsTarget).toFixed(1)}"/>` : "";
-  const last = per.length - 1;
-  /* one point alone: name it above the point, not over it */
-  const solo = per.length === 1;
-  const ends = `<text class="cb-end cb-end--saved" x="${(cx(last) + (solo ? 0 : 8)).toFixed(1)}" y="${(solo ? Math.min(y(per[last].saved), y(Math.max(0, per[last].spend))) - 8 : y(per[last].saved) + 4).toFixed(1)}"${solo ? ' text-anchor="middle"' : ""}>Saved</text>` +
-    (vm.savingsTarget != null ? `<text class="cb-end" x="${W - R}" y="${(y(vm.savingsTarget) - 6).toFixed(1)}" text-anchor="end">Target ${formatEur(vm.savingsTarget)}</text>` : "");
-  const what = vm.mode === "year" ? "year" : "month";
-  return `${modeHtml(vm.mode)}<p class="sub">Bars: what you spent. Line: what you saved. Dashed line: your savings target.</p>` +
-    `<svg class="cb" viewBox="0 0 ${W + 48} ${H}" role="group" aria-label="Spent and saved by ${what}">${tgt}<polyline class="cb-line" points="${pts}"/>${groups}${ends}</svg>`;
+  const yrs = per.map((m, i) => [m, i]).filter(([m, i]) => i === 0 || m.key.slice(0, 4) !== per[i - 1].key.slice(0, 4)).map(([m, i]) => {
+    const yk = m.key.slice(0, 4), on = year && curKey === yk;
+    return `<g data-action="period-pick" data-key="${esc(yk)}" role="button" tabindex="0" aria-pressed="${on}" aria-label="${esc(yk)}">` +
+      `<rect class="cb-hit" x="${(cx(i) - step / 2).toFixed(1)}" y="${H - 20}" width="${step * 2}" height="20"/>` +
+      `<text class="cb-yr${on ? " is-on" : ""}" x="${(cx(i) - 12).toFixed(1)}" y="${H - 6}">${esc(yk)} ▸</text></g>`;
+  }).join("");
+  const line = (k) => `<polyline class="cb-line cb-line--${k}" points="${per.map((m, i) => `${cx(i).toFixed(1)},${y(m[k]).toFixed(1)}`).join(" ")}"/>`;
+  /* the target steps month by month: what was needed then to finish on time */
+  const tgt = tg.length ? `<path class="cb-tgt" d="${tg.map((v, i) => `${i ? "L" : "M"}${(cx(i) - step / 2).toFixed(1)},${y(v).toFixed(1)} L${(cx(i) + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}"/>` : "";
+  /* names past the last month, sorted by height and pushed 14px apart */
+  const li = per.length - 1, ex = (cx(li) + step / 2 + 6).toFixed(1);
+  const ends = [["income", "Income", per[li].income], ["spend", "Spent", per[li].spend], ["saved", "Saved", per[li].saved]]
+    .concat(tg.length ? [["tgt", "Target", tg[li]]] : []).map(([k, n, v]) => ({ k, n, yy: y(v) + 4 })).sort((p, q) => p.yy - q.yy);
+  for (let i = 1; i < ends.length; i++) ends[i].yy = Math.max(ends[i].yy, ends[i - 1].yy + 14);
+  const endTxt = ends.map((e) => `<text class="cb-end cb-end--${e.k}" x="${ex}" y="${e.yy.toFixed(1)}">${e.n}</text>`).join("");
+  return `<p class="sub">Tap a month or a year.</p>` +
+    `<div class="cb-wrap"><svg class="cb-axis" viewBox="0 0 40 ${H}" width="40" height="${H}" aria-hidden="true">${axis}</svg>` +
+    `<div class="cb-scroll"><svg class="cb" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="Income, spent and saved by month">${band}${grid}${tgt}${line("income")}${line("spend")}${line("saved")}${groups}${yrs}${endTxt}</svg></div></div>`;
 }
 
 export function trendHtml(t, year = false) {
@@ -139,9 +150,8 @@ function catsHtml(vm) {
 }
 
 export function overviewHtml(vm, ctx, me = "") {
-  const title = vm.mode === "year" ? "year by year" : "month by month";
   return `${chips(vm, ctx, me)}${kpisHtml(vm.kpis, ctx)}${goalHtml(vm.goal)}
-    <div class="two"><div class="m3-card m3-card--elevated card"><h2>Spending and saving, ${title}</h2>${chartHtml(vm)}</div>
+    <div class="two"><div class="m3-card m3-card--elevated card"><h2>Spending and saving</h2>${chartHtml(vm)}</div>
     <div class="pane-col"><div class="m3-card m3-card--elevated card pane">${trendsHtml(vm)}</div><div class="m3-card m3-card--elevated card pane">${catsHtml(vm)}</div></div></div>`;
 }
 
@@ -231,10 +241,13 @@ const TRANSIENT = ["offline", "rate-limited", "error"];
    does not blank what the person was already reading.
    opts.keepView: repaint the scope tabs and nav only, and leave Settings
    alone (a typed but unsaved token must survive a background load). */
+/* a "YYYY" selection is a year, anything else a month */
+export function modeOf(key) { return /^\d{4}$/.test(key || "") ? "year" : "month"; }
+
 /* The view model search looks through: the scope's last good data. */
 export function searchVm(env) {
   const g = env.good && env.good.scope === env.scope ? env.good.loaded : (env.loaded && env.loaded.status === "ok" ? env.loaded : null);
-  return g ? env.buildView({ summary: g.summary, targets: g.targets, mode: env.mode, selected: env.selected }) : null;
+  return g ? env.buildView({ summary: g.summary, targets: g.targets, mode: modeOf(env.selected), selected: env.selected }) : null;
 }
 
 export function render(env, opts = {}) {
@@ -258,7 +271,7 @@ export function render(env, opts = {}) {
   const ctx = { scope, targetsFile: env.targetsPath(scope) };
   if (!settings.token) { view.innerHTML = statusHtml("no-token", ctx); return; }
   const good = env.good && env.good.scope === scope ? env.good.loaded : null;
-  const draw = (r) => env.buildView({ summary: r.summary, targets: r.targets, mode: env.mode, selected: env.selected });
+  const draw = (r) => env.buildView({ summary: r.summary, targets: r.targets, mode: modeOf(env.selected), selected: env.selected });
   if (!loaded) {
     view.innerHTML = good ? overviewHtml(draw(good), ctx, me) : `<div class="note">Loading...</div>`;
     return;

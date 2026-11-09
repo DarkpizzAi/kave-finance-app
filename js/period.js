@@ -14,7 +14,7 @@ function add(into, cats) {
 }
 
 export function allMonthBuckets(months) {
-  return months.map((m) => ({ key: m.label, label: shortMonth(m.label), spend: m.spend,
+  return months.map((m) => ({ key: m.label, label: shortMonth(m.label), income: m.income || 0, spend: m.spend,
     saved: m.savedNet, byCategory: m.byCategory || {}, top: m.top || {} }));
 }
 

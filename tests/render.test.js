@@ -1,6 +1,6 @@
 import { test, eq, ok } from "./run.js";
 import { overviewHtml, statusHtml, scopesHtml, whoHtml, settingsHtml, staleOverviewHtml, trendHtml } from "../js/render.js";
-import { searchResultsHtml } from "../js/render.js";
+import { searchResultsHtml, modeOf } from "../js/render.js";
 import { buildView } from "../js/view-model.js";
 
 const NOW = new Date("2026-10-04T10:00:00Z");
@@ -62,16 +62,6 @@ test("first launch asks who is looking", () => {
   const html = whoHtml();
   ok(html.includes('data-action="who"') && html.includes('data-who="hugo"') && html.includes('data-who="isa"'));
 });
-test("a month with negative spend never draws a negative bar height", () => {
-  const neg = { ...SUMMARY, months: [
-    { label: "2026-07", income: 3000, spend: -200, savedNet: 0, byCategory: {} },
-    { label: "2026-08", income: 3000, spend: 2100, savedNet: 900, byCategory: { food: 300 } }] };
-  const html = overviewHtml(buildView({ summary: neg, targets: T, now: NOW }), CTX);
-  ok(html.includes('class="cb"'), "chart drawn");
-  ok(!html.includes('height="-'), "negative bar height");
-  ok(!html.includes('height:-'), "negative height");
-  ok(!html.includes("NaN"));
-});
 test("Settings warns loudly when the theme preload did not run", () => {
   const s = { token: "", me: "hugo" };
   ok(settingsHtml(s, false).includes("Theme preload BLOCKED: recompute the CSP hash (see README)."));
@@ -98,7 +88,7 @@ test("plain titles: no YYYY-MM anywhere a person reads", () => {
   ok(!/\d{4}-\d{2}/.test(html.replace(/data-key="[^"]*"/g, "")), "no raw month keys in text");
   ok(html.includes("Where August's money went"));
 });
-test("chart: no legend, lines named at their end, selected bar marked", () => {
+test("chart: no legend, lines named at their end, selected month marked", () => {
   const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, selected: "2026-07" }), CTX);
   ok(html.includes(">Saved</text>")); ok(html.includes("Target"));
   ok(!html.includes("legend")); ok(html.includes('aria-pressed="true"'));
@@ -107,23 +97,6 @@ test("trend text is signed; a big rise carries the error class", () => {
   ok(trendHtml({ name: "food", now: 450, avg: 200, delta: 250, big: true }).includes("trend--big"));
   ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }).includes("▼ -"));
   ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }, true).includes("vs last year"));
-});
-test("Month / Year segmented button", () => {
-  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year" }), CTX);
-  ok(html.includes('data-action="period-mode"')); ok(html.includes('data-mode="year" aria-pressed="true"'));
-});
-test("year view: one-offs carry their year; a lone year names Saved above its point", () => {
-  const one = { ...SUMMARY, months: SUMMARY.months.slice(1) };
-  const html = overviewHtml(buildView({ summary: one, targets: T, now: NOW, mode: "year" }), CTX);
-  ok(html.includes("Aug 2026"), "year on one-off");
-  ok(/cb-end--saved"[^>]*text-anchor="middle"/.test(html), "solo label");
-  const ly = +html.match(/cb-end--saved" x="[^"]*" y="([^"]*)"/)[1], bt = +html.match(/class="cb-bar[^"]*" x="[^"]*" y="([^"]*)"/)[1];
-  ok(ly < bt, "solo label above the bar");
-  ok(!overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX).includes("Aug 2026<"), "month view stays short");
-});
-test("header chip: data up to and imported", () => {
-  const s = { ...SUMMARY, lastDate: "2026-08-31" };
-  ok(overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX).includes("data up to 31 Aug 2026 - imported 28 Sep 2026"));
 });
 test("one-offs and trends cards: empty states and escaped titles", () => {
   const s = { ...SUMMARY, exceptional: [{ title: "<b>Tax</b>", category: "income-tax", start: "2026-08", end: "2026-08", amount: 300 }] };
@@ -147,4 +120,48 @@ test("registered one-offs show as spends in every period, escaped", () => {
 test("search rows name months in words", () => {
   const html = searchResultsHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), "");
   ok(html.includes("August 2026") && !/\d{4}-\d{2}/.test(html));
+});
+
+test("chart draws income, spent and saved as lines", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
+  for (const k of ["income", "spend", "saved"]) ok(new RegExp(`<polyline class="cb-line cb-line--${k}"`).test(html), k);
+  ok(!html.includes("cb-bar"), "no bars");
+  ok(!html.includes("NaN"));
+});
+test("line ends are named and never closer than 14px", () => {
+  const s = { ...SUMMARY, months: [
+    { label: "2026-07", income: 3000, spend: 1800, savedNet: 1200, byCategory: {} },
+    { label: "2026-08", income: 1000, spend: 990, savedNet: 10, byCategory: {} }] };
+  const vm = buildView({ summary: s, targets: T, now: NOW });
+  vm.mtargets = [1500, 12];
+  const html = overviewHtml(vm, CTX);
+  const ys = ["income", "spend", "saved", "tgt"].map((k) => +html.match(new RegExp(`cb-end--${k}" x="[^"]*" y="([^"]*)"`))[1]);
+  for (let i = 0; i < ys.length; i++) for (let j = i + 1; j < ys.length; j++) ok(Math.abs(ys[i] - ys[j]) >= 14 - 1e-9, `${i}/${j}`);
+});
+test("the target steps month by month", () => {
+  const vm = buildView({ summary: SUMMARY, targets: T, now: NOW });
+  ok(vm.mtargets && vm.mtargets.length === vm.periods.length, "targets aligned");
+  const d = overviewHtml(vm, CTX).match(/<path class="cb-tgt" d="([^"]*)"/)[1];
+  eq((d.match(/[ML]/g) || []).length, 2 * vm.periods.length);
+});
+test("chart sub-line is short", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: NOW }), CTX);
+  ok(html.includes("Tap a month or a year.")); ok(!html.includes("Bars:"));
+  ok(!html.includes('data-action="period-mode"'), "no Month / Year chips");
+});
+test("no imported chip", () => {
+  const s = { ...SUMMARY, lastDate: "2026-08-31" };
+  ok(!overviewHtml(buildView({ summary: s, targets: T, now: NOW }), CTX).includes("imported"));
+  const late = overviewHtml(buildView({ summary: SUMMARY, targets: T, now: new Date("2026-12-20T10:00:00Z") }), CTX);
+  ok(late.includes("days old"), "stale chip stays");
+});
+test("year label selects the year, months of that year are banded", () => {
+  const s = { ...SUMMARY, months: [
+    { label: "2025-12", income: 3000, spend: 1800, savedNet: 1200, byCategory: {} }, ...SUMMARY.months] };
+  const html = overviewHtml(buildView({ summary: s, targets: T, now: NOW, mode: modeOf("2026"), selected: "2026" }), CTX);
+  ok(/data-action="period-pick" data-key="2026" [^>]*aria-pressed="true"/.test(html), "year label pressed");
+  ok(html.includes('data-key="2025"'), "first year label");
+  ok(html.includes('data-key="2026-07"'), "months keep month keys");
+  eq((html.match(/class="cb-band"/g) || []).length, 2, "both 2026 months banded");
+  eq(modeOf("2026-07"), "month");
 });
