@@ -251,3 +251,7 @@ test("year buckets add up income", () => {
   eq(vm.current.income, 6000);
   ok(!overviewHtml(vm, CTX).includes("NaN"), "no NaN");
 });
+test("with cash on hand, the goal line says cash and the day it was counted", () => {
+  const html = overviewHtml(buildView({ summary: SUMMARY, targets: { ...T, cash: 14000, cashAsOf: "2026-08-09" }, now: NOW }), CTX);
+  ok(html.includes("14 900 € in cash (counted 09/08) + 6 000 € on its way"), "cash goal line");
+});

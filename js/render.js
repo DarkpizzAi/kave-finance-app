@@ -180,7 +180,7 @@ function planHtml(vm, ctx) {
     (p.early > 0 ? `, ${p.early} month${p.early === 1 ? "" : "s"} early.` : p.early < 0 ? `, ${-p.early} month${p.early === -1 ? "" : "s"} late.` : ", right on time.") : "";
   return `<div class="m3-card m3-card--elevated card"><h2>Your plan</h2>${paceLine ? `<p class="pace">${paceLine}</p>` : ""}
     ${g ? `<div class="track"><div class="seg-saved" style="width:${g.pctSaved}%"></div><div class="seg-pend" style="width:${g.pctExpected}%"></div></div>
-    <p class="sub">${formatEur(g.saved)} saved + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p>` : ""}
+    <p class="sub">${formatEur(g.saved)} ${g.cash ? `in cash (counted ${g.cash.slice(8)}/${g.cash.slice(5, 7)})` : "saved"} + ${formatEur(g.expected)} on its way = ${formatEur(g.total)} of ${formatEur(g.goal)} (${g.pctTotal}%), ${g.months} months to go</p>` : ""}
     ${k ? `<div class="pstats h-gap"><div class="pstat pstat--hero"><small>Left after saving / month</small><b>${formatEur(k.left)}</b></div><div class="pstat"><small>Typical income</small><b>${formatEur(k.income)}</b></div><div class="pstat"><small>Needed from now</small><b>${formatEur(k.savings)} / month</b></div></div>`
       : `<p class="sub">No target set: add it in ${esc(ctx.targetsFile)}.</p>`}</div>`;
 }

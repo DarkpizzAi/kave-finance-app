@@ -1,5 +1,5 @@
 import { test, eq, ok } from "./run.js";
-import { buildView } from "../js/view-model.js";
+import { buildView, cashSaved } from "../js/view-model.js";
 
 const NOW = new Date("2026-10-04T10:00:00Z");
 const SUMMARY = {
@@ -105,4 +105,13 @@ test("a goal already reached gives a zero target", () => {
   const v = buildView({ summary: s, targets: { goal: 100, deadline: "11/2026", expected: 500 }, now: NOW });
   eq(v.mtargets, [0, 0]);
   eq(v.curTarget, 0);
+});
+test("with cash on hand, saved is the cash plus its month and the months after", () => {
+  const v = buildView({ summary: SUMMARY, targets: { ...T, cash: 14000, cashAsOf: "2026-08-09" }, now: NOW });
+  eq([v.goal.saved, v.goal.cash], [14900, "2026-08-09"]);
+  eq(cashSaved(14000, "2026-09-01", SUMMARY.months), 14000);
+});
+test("without a cash date, saved stays the ledger's saved so far", () => {
+  const v = buildView({ summary: SUMMARY, targets: { ...T, cash: 14000 }, now: NOW });
+  eq([v.goal.saved, v.goal.cash], [6000, null]);
 });

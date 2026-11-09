@@ -10,10 +10,12 @@ const RULES = [
   ["deadline", /^deadline$/i],
   ["expected", /^expected money$/i],
   ["income", /^typical income$/i],
+  ["cash", /^cash on hand$/i],
+  ["cashAsOf", /^cash as of$/i],
 ];
 
 export function parseTargets(md) {
-  const out = { goal: null, deadline: null, expected: null, income: null };
+  const out = { goal: null, deadline: null, expected: null, income: null, cash: null, cashAsOf: null };
   for (const line of String(md == null ? "" : md).split(/\r?\n/)) {
     const t = line.trim();
     if (!t.startsWith("|")) continue;
@@ -23,6 +25,10 @@ export function parseTargets(md) {
       if (!re.test(cells[0])) continue;
       if (key === "deadline") {
         out.deadline = /^\d{1,2}\/\d{4}$/.test(cells[1]) ? cells[1] : null;
+      } else if (key === "cashAsOf") {
+        /* DD/MM/YYYY, kept as YYYY-MM-DD so it compares with ledger dates */
+        const d = cells[1].match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        out.cashAsOf = d ? `${d[3]}-${d[2].padStart(2, "0")}-${d[1].padStart(2, "0")}` : null;
       } else {
         const n = Number(cells[1].replace(/[\s  ]/g, ""));
         out[key] = cells[1] !== "" && Number.isFinite(n) ? n : null;

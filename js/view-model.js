@@ -6,14 +6,25 @@
 import { monthsLeft, savingsTarget, leftAfterSaving, goalBar, staleDays, STALE_AFTER_DAYS } from "./calc.js";
 import { buckets, allMonthBuckets, pick, trends, monthName } from "./period.js";
 
+/* The month the cash was counted in is added too: its salary usually lands
+   at the end of the month, after the count. The days of that month before
+   the count are then counted twice, a small error until the next count. */
+export function cashSaved(cash, asOf, months) {
+  const m = asOf.slice(0, 7);
+  return (months || []).filter((x) => x.label >= m).reduce((a, x) => a + x.savedNet, cash);
+}
+
 export function buildView({ summary, targets, now = new Date(), mode = "month", selected = null }) {
   const t = targets || {};
-  const saved = summary ? summary.savedSoFar : null;
+  /* With a cash figure in the targets, "saved" is that cash plus what each
+     whole month after it saved; without one, the ledger's saved so far. */
+  const cashOn = t.cash != null && t.cashAsOf != null;
+  const saved = !summary ? null : cashOn ? cashSaved(t.cash, t.cashAsOf, summary.months) : summary.savedSoFar;
   const months = t.goal > 0 && t.deadline ? monthsLeft(t.deadline, now) : null;
 
   let goal = null, kpis = null;
   if (months != null && saved != null) {
-    goal = { goal: t.goal, saved, expected: t.expected || 0, months,
+    goal = { goal: t.goal, saved, expected: t.expected || 0, months, cash: cashOn ? t.cashAsOf : null,
              ...goalBar({ goal: t.goal, saved, expected: t.expected }) };
     if (t.income != null) {
       const savings = savingsTarget({ goal: t.goal, saved, expected: t.expected, months });
