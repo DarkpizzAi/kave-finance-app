@@ -48,11 +48,20 @@ export function buildView({ summary, targets, now = new Date(), mode = "month", 
   }
   const curTarget = mtargets && current && mode === "month"
     ? mtargets[periods.findIndex((p) => p.key === current.key)] : null;
+  /* at the pace of the last six months, when is the goal reached */
+  let pace = null;
+  if (goal && periods.length) {
+    const last = periods.slice(-6), avg = last.reduce((a, p) => a + p.saved, 0) / last.length;
+    if (avg > 0) {
+      const n = Math.max(0, Math.ceil((goal.goal - goal.saved - goal.expected) / avg));
+      pace = { avg, n, date: new Date(now.getFullYear(), now.getMonth() + n, 1), early: goal.months - n };
+    }
+  }
   const age = summary ? staleDays(summary.generated, now) : null;
   const target = kpis ? (mode === "year" ? kpis.savings * 12 : kpis.savings) : null;
 
   return {
-    mtargets, curTarget, goal, kpis, mode, periods, current, selectedKey: selected || null,
+    mtargets, curTarget, pace, goal, kpis, mode, periods, current, selectedKey: selected || null,
     trends: current ? trends(mode === "year" ? years : periods, key, mode, skip) : [],
     exceptional, cats,
     periodName: current ? (mode === "year" ? current.label : monthName(current.key)) : "",

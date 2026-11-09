@@ -93,8 +93,8 @@ test("chart: no legend, lines named at their end, selected month marked", () => 
   ok(html.includes(">Saved</text>")); ok(html.includes("Target"));
   ok(!html.includes("legend")); ok(html.includes('aria-pressed="true"'));
 });
-test("trend text is signed; a big rise carries the error class", () => {
-  ok(trendHtml({ name: "food", now: 450, avg: 200, delta: 250, big: true }).includes("trend--big"));
+test("trend text is signed; a rise carries the up (error) class", () => {
+  ok(trendHtml({ name: "food", now: 450, avg: 200, delta: 250, big: true }).includes("trend--up"));
   ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }).includes("▼ -"));
   ok(trendHtml({ name: "food", now: 100, avg: 200, delta: -100, big: false }, true).includes("vs last year"));
 });
@@ -208,4 +208,24 @@ test("saved stat is green, target is the month's", () => {
 test("plan card says Needed from now", () => {
   const html = overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX);
   ok(html.includes("Needed from now")); ok(!html.includes("Savings target"));
+});
+
+test("a zero change shows no trend", () => {
+  const html = trendHtml({ name: "food", now: 200, avg: 200, delta: 0, big: false });
+  ok(!html.includes("trend--") && !html.includes("-0") && html.includes("<span></span>"), html);
+});
+test("pace reaches the goal early at a good saving rate", () => {
+  const s = { ...SUMMARY, savedSoFar: 10000, months: [
+    { label: "2026-07", income: 3000, spend: 1000, savedNet: 2000, byCategory: {} },
+    { label: "2026-08", income: 3000, spend: 1000, savedNet: 2000, byCategory: {} }] };
+  const vm = buildView({ summary: s, targets: { goal: 30000, deadline: "12/2027", expected: 4000, income: 3000 }, now: NOW });
+  eq(vm.pace.avg, 2000); eq(vm.pace.n, 8); eq(vm.pace.early, vm.goal.months - 8);
+  ok(vm.pace.early > 0, "early");
+  eq(vm.pace.date.getMonth(), 5); eq(vm.pace.date.getFullYear(), 2027);
+  const html = overviewHtml(vm, CTX);
+  ok(html.includes("At your pace (2 000 € a month) you reach 30 000 € in <b>June 2027</b>, " + vm.pace.early + " months early."), "pace line");
+});
+test("no goal, no pace", () => {
+  eq(buildView({ summary: SUMMARY, targets: null, now: NOW }).pace, null);
+  ok(!overviewHtml(buildView({ summary: SUMMARY, targets: null, now: NOW }), CTX).includes("At your pace"));
 });

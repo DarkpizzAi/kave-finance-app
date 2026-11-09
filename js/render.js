@@ -110,7 +110,7 @@ const LABEL = { "tail-spend": "Small buys" };
 const ICON = { housing: "home", food: "restaurant", leisure: "local_activity", travel: "flight", transport: "directions_bus",
   subscriptions: "autorenew", health: "favorite", services: "build", "tail-spend": "shopping_bag", bizum: "swap_horiz" };
 /* a rise is error red, a fall is green */
-const trendSpan = (t, extra = "") => `<span class="trend ${t.delta > 0 ? "trend--up" : "trend--down"}${t.big ? " trend--big" : ""}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))}${extra}</span>`;
+const trendSpan = (t, extra = "") => !t.delta ? "<span></span>" : `<span class="trend ${t.delta > 0 ? "trend--up" : "trend--down"}">${t.delta > 0 ? "▲ +" : "▼ -"}${formatEur(Math.abs(t.delta))}${extra}</span>`;
 
 export function trendHtml(t, year = false) {
   return `<div class="rank rank--3"><span>${esc(LABEL[t.name] || t.name)}</span>${trendSpan(t, year ? " vs last year" : " vs usual")}<b>${formatEur(t.now)}</b></div>`;
@@ -165,7 +165,7 @@ function periodHtml(vm, openCat) {
    what is left after saving, typical income and what is needed from now. */
 function planHtml(vm, ctx) {
   const k = vm.kpis, g = vm.goal, p = vm.pace;
-  const paceLine = p && g ? `At your pace (${formatEur(p.avg)} a month) you reach ${formatEur(g.goal)} in <b>${esc(monthName(`${p.date.getFullYear()}-${String(p.date.getMonth() + 1).padStart(2, "0")}`))} ${p.date.getFullYear()}</b>` +
+  const paceLine = p && g ? `At your pace (${formatEur(Math.round(p.avg))} a month) you reach ${formatEur(g.goal)} in <b>${esc(monthName(`${p.date.getFullYear()}-${String(p.date.getMonth() + 1).padStart(2, "0")}`))} ${p.date.getFullYear()}</b>` +
     (p.early > 0 ? `, ${p.early} month${p.early === 1 ? "" : "s"} early.` : p.early < 0 ? `, ${-p.early} month${p.early === -1 ? "" : "s"} late.` : ", right on time.") : "";
   return `<div class="m3-card m3-card--elevated card"><h2>Your plan</h2>${paceLine ? `<p class="pace">${paceLine}</p>` : ""}
     ${g ? `<div class="track"><div class="seg-saved" style="width:${g.pctSaved}%"></div><div class="seg-pend" style="width:${g.pctExpected}%"></div></div>
