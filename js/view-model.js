@@ -33,11 +33,24 @@ export function buildView({ summary, targets, now = new Date(), mode = "month", 
     ? Object.entries(current.byCategory).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
         .map(([name, amount]) => ({ name, amount }))
     : [];
+  /* each month's target is what was still needed when that month began */
+  let mtargets = null;
+  if (goal && periods.length) {
+    let after = 0;
+    mtargets = new Array(periods.length);
+    for (let i = periods.length - 1; i >= 0; i--) {
+      after += periods[i].saved;
+      const before = goal.saved - after, left = goal.months + (periods.length - 1 - i);
+      mtargets[i] = Math.max(0, Math.round((goal.goal - goal.expected - before) / left));
+    }
+  }
+  const curTarget = mtargets && current && mode === "month"
+    ? mtargets[periods.findIndex((p) => p.key === current.key)] : null;
   const age = summary ? staleDays(summary.generated, now) : null;
   const target = kpis ? (mode === "year" ? kpis.savings * 12 : kpis.savings) : null;
 
   return {
-    goal, kpis, mode, periods, current, selectedKey: selected || null,
+    mtargets, curTarget, goal, kpis, mode, periods, current, selectedKey: selected || null,
     trends: current ? trends(mode === "year" ? periods : allMonthBuckets(summary.months), key, mode, skip) : [],
     exceptional, cats,
     periodName: current ? (mode === "year" ? current.label : monthName(current.key)) : "",

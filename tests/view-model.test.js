@@ -67,3 +67,17 @@ test("exceptional spends follow the selected period", () => {
   eq(buildView({ summary: s, targets: T, now: NOW, selected: "2026-07" }).exceptional.length, 1);
   eq(buildView({ summary: s, targets: T, now: NOW }).exceptional.length, 0);
 });
+
+test("each month's target is what was needed then", () => {
+  const s = { generated: "2026-10-01T09:00:00Z", kind: "calendar", savedSoFar: 300, oneOffs: [],
+    months: [{ label: "2026-08", income: 0, spend: 0, savedNet: 100, byCategory: {} },
+             { label: "2026-09", income: 0, spend: 0, savedNet: 200, byCategory: {} }] };
+  const v = buildView({ summary: s, targets: { goal: 1000, deadline: "11/2026", expected: 0 }, now: NOW });
+  eq(v.goal.months, 2);
+  eq(v.mtargets, [333, 450]);
+  eq(v.curTarget, 450);
+});
+test("no targets file, no monthly targets", () => {
+  const v = buildView({ summary: SUMMARY, targets: null, now: NOW });
+  eq([v.mtargets, v.curTarget], [null, null]);
+});

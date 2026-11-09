@@ -15,7 +15,7 @@ function add(into, cats) {
 
 export function allMonthBuckets(months) {
   return months.map((m) => ({ key: m.label, label: shortMonth(m.label), spend: m.spend,
-    saved: m.savedNet, byCategory: m.byCategory || {} }));
+    saved: m.savedNet, byCategory: m.byCategory || {}, top: m.top || {} }));
 }
 
 export function buckets(months, mode, now = new Date()) {

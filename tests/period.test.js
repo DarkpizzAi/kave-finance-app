@@ -59,3 +59,11 @@ test("a running year is compared with the same months of the year before", () =>
   eq(trends(buckets(ms, "year", NOW), "2026", "year", new Set()), []);   // Jan vs Jan, not vs the full 2025
 });
 test("month names", () => { eq(monthName("2026-08"), "August"); });
+
+test("month buckets carry their top spends", () => {
+  const x = { date: "2026-01-05", name: "Shop A", amount: 40 };
+  const b = allMonthBuckets([{ label: "2026-01", spend: 1, savedNet: 0, byCategory: {}, top: { food: [x] } },
+    { label: "2026-02", spend: 1, savedNet: 0, byCategory: {} }]);
+  eq(b[0].top.food, [x]);
+  eq(b[1].top, {});
+});
