@@ -147,10 +147,12 @@ function periodHtml(vm, openCat) {
     const t = tmap.get(x.name), pct = sum ? Math.round(x.amount / sum * 100) : 0;
     const open = openCat === x.name;
     const list = open ? `<div class="ctop">${topHtml(((c.top || {})[x.name]) || [], year)}</div>` : "";
-    return `<div class="crow${open ? " is-open" : ""}" data-action="cat-pick" data-cat="${esc(x.name)}" role="button" tabindex="0" aria-expanded="${open}">` +
-      `<span class="crow__n"><span class="m3-icon crow__i" aria-hidden="true">${ICON[x.name] || "category"}</span>${esc(LABEL[x.name] || x.name)}</span>` +
-      `<span class="crow__p">${pct}%</span>${t ? trendSpan(t) : "<span></span>"}<b>${formatEur(x.amount)}</b>` +
-      `<i><u style="width:${top ? x.amount / top * 100 : 0}%"></u></i></div>${list}`;
+    return `<button type="button" class="m3-list-item m3-list-item--tap crow${open ? " is-open" : ""}" data-action="cat-pick" data-cat="${esc(x.name)}" aria-expanded="${open}">` +
+      `<span class="m3-list-item__lead m3-list-item__lead--plain"><span class="m3-icon" aria-hidden="true">${ICON[x.name] || "category"}</span></span>` +
+      `<span class="m3-list-item__text"><span class="m3-body-l crow__n">${esc(LABEL[x.name] || x.name)}</span>` +
+      `<span class="m3-body-m m3-variant crow__meta"><span class="crow__p">${pct}%</span>${t ? trendSpan(t) : "<span></span>"}</span>` +
+      `<i><u style="width:${top ? x.amount / top * 100 : 0}%"></u></i></span>` +
+      `<b class="crow__amt">${formatEur(x.amount)}</b><span class="m3-icon m3-list-item__trail" aria-hidden="true">${open ? "expand_less" : "expand_more"}</span></button>${list}`;
   }).join("");
   return `<div class="m3-card m3-card--elevated card"><h2>${esc(name)}</h2>
     <div class="pstats">${stat("Income", formatEur(c.income))}${stat("Spent", formatEur(c.spend))}${stat("Saved", formatEur(c.saved), " pstat--saved")}` +

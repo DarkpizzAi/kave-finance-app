@@ -133,13 +133,12 @@ body.gated > :not(#gate) { display: none !important; }
 .pstat--hero { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
 .pstat--hero small { color: var(--md-sys-color-on-secondary-container); }
 .pstat--saved b, .pstat--saved small { color: var(--kave-data-outdoors); }
-.crow { display: grid; grid-template-columns: minmax(0, 1fr) 3rem 5.5rem 5rem; gap: var(--md-sys-measurement-space100); align-items: center; padding: var(--md-sys-measurement-space100) 0 var(--md-sys-measurement-space50); font-size: 16px; cursor: pointer; }
-.crow__n { display: flex; align-items: center; gap: var(--md-sys-measurement-space100); min-width: 0; }
-.crow__i { font-size: 20px; color: var(--md-sys-color-on-surface-variant); }
-.crow__p { color: var(--md-sys-color-on-surface-variant); text-align: right; font-size: 14px; }
-.crow b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
-.crow .trend { text-align: right; font-size: 12px; }
-.crow i { grid-column: 1 / -1; display: block; height: 8px; background: var(--md-sys-color-surface-container-highest); border-radius: 4px; overflow: hidden; }
+.crow { width: 100%; text-align: left; align-items: flex-start; }
+.crow .m3-list-item__lead, .crow .m3-list-item__trail { align-self: center; }
+.crow__meta { display: flex; gap: var(--md-sys-measurement-space100); }
+.crow__amt { flex: none; font-weight: 500; font-variant-numeric: tabular-nums; align-self: center; }
+.crow .trend { font-size: inherit; }
+.crow i { display: block; height: 8px; margin-top: var(--md-sys-measurement-space50); background: var(--md-sys-color-surface-container-highest); border-radius: 4px; overflow: hidden; }
 .crow u { display: block; height: 100%; background: var(--md-sys-color-primary-container); }
 .ctop { padding: var(--md-sys-measurement-space50) 0 var(--md-sys-measurement-space150) var(--md-sys-measurement-space400); }
 .ctop__r { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 5rem; gap: var(--md-sys-measurement-space100); padding: var(--md-sys-measurement-space50) 0; font-size: 14px; }
@@ -147,4 +146,4 @@ body.gated > :not(#gate) { display: none !important; }
 .ctop__r b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
 .trend--up { color: var(--md-sys-color-error); }
 .trend--down { color: var(--kave-data-outdoors); }
-.pace { font-size: 16px; line-height: 24px; margin: var(--md-sys-measurement-space100) 0; }
+.pace { font-size: 16px; line-height: 24px; }

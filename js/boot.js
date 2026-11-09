@@ -37,10 +37,15 @@ function paint(opts) {
   env.settings = store.state.settings;
   if (renderGate(env.settings, GATE)) return;
   /* the chart opens on the latest month and keeps its place across repaints */
-  const was = document.querySelector(".cb-scroll"), left = was ? was.scrollLeft : null;
+  const was = document.querySelector(".cb-scroll"), keep = was && env.chartScope === env.scope;
+  const left = keep ? was.scrollLeft : null;
   render(env, opts);
   const sc = document.querySelector(".cb-scroll");
-  if (sc) sc.scrollLeft = left == null ? sc.scrollWidth : left;
+  if (!sc) return;
+  env.chartScope = env.scope;
+  /* a chart new to this scope opens at the latest month, once laid out */
+  const end = () => { sc.scrollLeft = sc.scrollWidth; };
+  if (left == null) { end(); requestAnimationFrame(end); } else sc.scrollLeft = left;
 }
 /* A background load must not rebuild Settings: the token field may hold
    something typed and not yet saved. */

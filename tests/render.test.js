@@ -181,7 +181,8 @@ test("tapping a category lists its top five", () => {
   eq((html.match(/class="ctop__r"/g) || []).length, 5);
   ok(html.includes(">03/08<") && html.includes(">27/08<"), "dd/mm dates");
   ok(html.includes("Bistro &lt;one&gt;") && !html.includes("<one>"), "names escaped");
-  ok(/data-action="cat-pick" data-cat="food" role="button" tabindex="0" aria-expanded="true"/.test(html), "row expanded");
+  ok(/<button type="button" class="m3-list-item m3-list-item--tap crow is-open" data-action="cat-pick" data-cat="food" aria-expanded="true">/.test(html), "row expanded");
+  ok(html.includes("expand_less") && html.includes("expand_more"), "expand indicators");
   ok(!overviewHtml(buildView({ summary: TOPSUM, targets: T, now: NOW }), CTX).includes("ctop"), "closed by default");
 });
 test("an opened category with no top data says so", () => {
@@ -228,4 +229,10 @@ test("pace reaches the goal early at a good saving rate", () => {
 test("no goal, no pace", () => {
   eq(buildView({ summary: SUMMARY, targets: null, now: NOW }).pace, null);
   ok(!overviewHtml(buildView({ summary: SUMMARY, targets: null, now: NOW }), CTX).includes("At your pace"));
+});
+
+test("year buckets add up income", () => {
+  const vm = buildView({ summary: SUMMARY, targets: T, now: NOW, mode: "year", selected: "2026" });
+  eq(vm.current.income, 6000);
+  ok(!overviewHtml(vm, CTX).includes("NaN"), "no NaN");
 });
