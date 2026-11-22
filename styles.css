@@ -22,13 +22,15 @@ body { margin: 0; }
 .scopes { padding: 0 var(--kave-layout-margin-compact) var(--md-sys-measurement-space100); max-width: 720px; margin: 0 auto; }
 .scopes:empty, .scopes[hidden] { display: none; }
 
-.view { padding: var(--md-sys-measurement-space100) var(--kave-layout-margin-compact) calc(var(--md-sys-measurement-space400) + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; gap: var(--md-sys-measurement-space150); max-width: 720px; margin: 0 auto; }
+/* the content is the page panel (kit: html[data-panel], .m3-panel): it fills the room under the top bar */
+.shell { display: flex; flex-direction: column; }
+.view { padding: var(--md-sys-measurement-space200) var(--kave-layout-margin-compact) calc(var(--md-sys-measurement-space400) + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: var(--md-sys-measurement-space150); flex: 1; width: calc(100% - 12px); max-width: 720px; margin-inline: auto; }
 
 /* cards: the kit's elevated card (white in light, black in dark), one radius */
-.card { border-radius: 24px; }
+.card { border-radius: 16px; }
 .card { padding: var(--md-sys-measurement-space200) var(--md-sys-measurement-space250); gap: var(--md-sys-measurement-space100); }
-h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; }
+h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; }
 .sub { margin: 0; font-size: 14px; line-height: 20px; color: var(--md-sys-color-on-surface-variant); }
 .note { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); padding: var(--md-sys-measurement-space150) var(--md-sys-measurement-space200); border-radius: 16px; font-size: 14px; line-height: 20px; }
 .note.alert { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); font-weight: 500; }
@@ -107,6 +109,13 @@ g[data-action]:focus-visible .cb-hit { stroke: var(--md-sys-color-primary); stro
   .view, .scopes { max-width: calc(1120px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 1120px - 2 * var(--kave-layout-margin)) / 2)); }
   .view[data-tab="settings"], .view[data-tab="roadmap"] { max-width: calc(720px + 2 * var(--kave-layout-margin)); margin-left: calc(96px + max(0px, (100vw - 96px - 720px - 2 * var(--kave-layout-margin)) / 2)); }
   .two { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: var(--kave-layout-spacer); align-items: start; }
+}
+
+/* wide: the panel is the room beside the rail; its content keeps the two widths, centred inside it */
+@media (min-width: 840px) {
+  .view { width: auto; max-width: none; margin-left: var(--kave-panel-left); margin-right: var(--kave-panel-right);
+    padding-left: max(var(--kave-layout-margin), calc((100% - 1120px) / 2)); padding-right: max(var(--kave-layout-margin), calc((100% - 1120px) / 2)); }
+  .view[data-tab="settings"], .view[data-tab="roadmap"] { padding-left: max(var(--kave-layout-margin), calc((100% - 720px) / 2)); padding-right: max(var(--kave-layout-margin), calc((100% - 720px) / 2)); }
 }
 
 /* search and roadmap */
